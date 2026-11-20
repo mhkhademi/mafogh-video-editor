@@ -16,6 +16,8 @@ interface CanvasStageProps {
   slideLocalTime: number;
   watermark: WatermarkConfig;
   selectedElementId: string | null;
+  width?: number;
+  height?: number;
   onSelectElement: (id: string | null) => void;
   onUpdateElement?: (elementId: string, partial: Partial<ISlideElement>) => void;
   isExporting?: boolean;
@@ -26,6 +28,8 @@ export const CanvasStage: React.FC<CanvasStageProps> = ({
   slideLocalTime,
   watermark,
   selectedElementId,
+  width = 1920,
+  height = 1080,
   onSelectElement,
   onUpdateElement,
   isExporting = false,
@@ -52,12 +56,12 @@ export const CanvasStage: React.FC<CanvasStageProps> = ({
       const deltaScreenX = moveEvent.clientX - startMouseX;
       const deltaScreenY = moveEvent.clientY - startMouseY;
 
-      // Convert screen pixels to 1920x1080 canvas coordinates accurately
+      // Convert screen pixels to canvas coordinates accurately
       const deltaCanvasX = deltaScreenX / scale;
       const deltaCanvasY = deltaScreenY / scale;
 
-      const deltaPercentX = (deltaCanvasX / 1920) * 100;
-      const deltaPercentY = (deltaCanvasY / 1080) * 100;
+      const deltaPercentX = (deltaCanvasX / width) * 100;
+      const deltaPercentY = (deltaCanvasY / height) * 100;
 
       let calcX = startElX + deltaPercentX;
       let calcY = startElY + deltaPercentY;
@@ -152,7 +156,7 @@ export const CanvasStage: React.FC<CanvasStageProps> = ({
 
       // Images: update width percentage
       if (el.type === 'image') {
-        const widthDeltaPercent = (delta / 1920) * 100;
+        const widthDeltaPercent = (delta / width) * 100;
         updates.width = Math.round(Math.max(10, Math.min(95, startWidth + widthDeltaPercent)));
       }
 
@@ -168,7 +172,7 @@ export const CanvasStage: React.FC<CanvasStageProps> = ({
     window.addEventListener('mouseup', handleMouseUp);
   };
 
-  // Auto-scale 1920x1080 stage to fit the viewport container perfectly
+  // Auto-scale stage to fit the viewport container perfectly
   useEffect(() => {
     if (isExporting) {
       setScale(1);
@@ -178,8 +182,8 @@ export const CanvasStage: React.FC<CanvasStageProps> = ({
     const updateScale = () => {
       if (!containerRef.current) return;
       const { clientWidth, clientHeight } = containerRef.current;
-      const targetWidth = 1920;
-      const targetHeight = 1080;
+      const targetWidth = width;
+      const targetHeight = height;
 
       // Available space with padding
       const availW = clientWidth - 48;
@@ -202,7 +206,7 @@ export const CanvasStage: React.FC<CanvasStageProps> = ({
       observer.disconnect();
       window.removeEventListener('resize', updateScale);
     };
-  }, [isExporting]);
+  }, [isExporting, width, height]);
 
   // Background style
   const getBackgroundStyle = (): React.CSSProperties => {
@@ -231,12 +235,12 @@ export const CanvasStage: React.FC<CanvasStageProps> = ({
       className="flex-1 w-full h-full flex items-center justify-center p-6 bg-slate-900/60 overflow-hidden relative select-none"
       onClick={() => onSelectElement(null)}
     >
-      {/* 1920x1080 Real-time Video Render Canvas */}
+      {/* Real-time Video Render Canvas */}
       <div
         id="video-canvas"
         style={{
-          width: '1920px',
-          height: '1080px',
+          width: `${width}px`,
+          height: `${height}px`,
           transform: `scale(${scale})`,
           transformOrigin: 'center center',
           ...getBackgroundStyle(),

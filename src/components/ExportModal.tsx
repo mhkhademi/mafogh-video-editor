@@ -86,6 +86,29 @@ export const ExportModal: React.FC<ExportModalProps> = ({
     0
   );
 
+  const getDims = (res: '1080p' | '720p') => {
+    let baseW = project.width || 1920;
+    let baseH = project.height || 1080;
+    if (project.aspectRatio === '9:16') {
+      baseW = 1080;
+      baseH = 1920;
+    } else if (project.aspectRatio === '1:1') {
+      baseW = 1080;
+      baseH = 1080;
+    } else if (project.aspectRatio === '16:9') {
+      baseW = 1920;
+      baseH = 1080;
+    }
+    const scaleFactor = res === '1080p' ? 1 : 720 / Math.min(baseW, baseH);
+    return {
+      width: Math.round(baseW * scaleFactor),
+      height: Math.round(baseH * scaleFactor),
+    };
+  };
+
+  const dim1080 = getDims('1080p');
+  const dim720 = getDims('720p');
+
   // Realistic bitrates for studio-grade presentation encoding
   const getBitrate = (res: '1080p' | '720p', frameRate: number) => {
     if (res === '1080p') {
@@ -147,8 +170,9 @@ export const ExportModal: React.FC<ExportModalProps> = ({
     setActualRenderDuration(null);
     setRenderStatusText('در حال بارگذاری فونت‌ها و تصاویر...');
 
-    const targetWidth = resolution === '1080p' ? 1920 : 1280;
-    const targetHeight = resolution === '1080p' ? 1080 : 720;
+    const dims = getDims(resolution);
+    const targetWidth = dims.width;
+    const targetHeight = dims.height;
     const targetBitrate = getBitrate(resolution, fps);
     const totalFrames = Math.round(actualTotalDuration * fps);
     setTotalFrameCount(totalFrames);
@@ -214,6 +238,8 @@ export const ExportModal: React.FC<ExportModalProps> = ({
             resolution,
             bitrate: targetBitrate,
             totalFrames,
+            width: targetWidth,
+            height: targetHeight,
           }),
         });
 
@@ -481,7 +507,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
                   }`}
                 >
                   <span className="font-bold">1080p Full HD</span>
-                  <span className="font-mono text-[11px] opacity-75">1920x1080</span>
+                  <span className="font-mono text-[11px] opacity-75">{dim1080.width}x{dim1080.height}</span>
                 </button>
                 <button
                   type="button"
@@ -494,7 +520,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
                   }`}
                 >
                   <span className="font-bold">720p HD</span>
-                  <span className="font-mono text-[11px] opacity-75">1280x720</span>
+                  <span className="font-mono text-[11px] opacity-75">{dim720.width}x{dim720.height}</span>
                 </button>
               </div>
             </div>

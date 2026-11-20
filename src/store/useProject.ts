@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Project, Slide, SlideElement, ElementType, AnimationConfig } from '../types';
+import { Project, Slide, SlideElement, ElementType, AnimationConfig, AspectRatioType } from '../types';
 import { ltvTemplate } from '../templates/ltvTemplate';
 
 export function useProjectStore() {
@@ -364,6 +364,29 @@ export function useProjectStore() {
     setSelectedElementId(null);
   }, []);
 
+  const setAspectRatio = useCallback((ratio: AspectRatioType) => {
+    setProject((prev) => {
+      let width = 1920;
+      let height = 1080;
+      if (ratio === '9:16') {
+        width = 1080;
+        height = 1920;
+      } else if (ratio === '1:1') {
+        width = 1080;
+        height = 1080;
+      } else {
+        width = 1920;
+        height = 1080;
+      }
+      return {
+        ...prev,
+        aspectRatio: ratio,
+        width,
+        height,
+      };
+    });
+  }, []);
+
   const resetToTemplate = useCallback(() => {
     if (confirm('آیا مایلید تمام اسلایدها با قالب پیش‌فرض LTV بازنشانی شوند؟')) {
       setProject(ltvTemplate);
@@ -410,6 +433,7 @@ export function useProjectStore() {
     addElement,
     updateElement,
     deleteElement,
+    setAspectRatio,
     resetToTemplate,
     jumpToSlide,
   };

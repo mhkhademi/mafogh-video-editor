@@ -5,6 +5,7 @@ export const ltvTemplate: Project = {
   title: 'ویدیوی آموزشی LTV چیست؟',
   width: 1920,
   height: 1080,
+  aspectRatio: '16:9',
   fps: 30,
   watermark: {
     enabled: true,

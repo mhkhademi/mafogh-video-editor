@@ -7,6 +7,8 @@ interface SlideSidebarProps {
   slides: Slide[];
   activeSlideId: string;
   watermark: WatermarkConfig;
+  projectWidth?: number;
+  projectHeight?: number;
   onSelectSlide: (id: string) => void;
   onAddSlide: () => void;
   onDuplicateSlide: (id: string) => void;
@@ -19,6 +21,8 @@ export const SlideSidebar: React.FC<SlideSidebarProps> = ({
   slides,
   activeSlideId,
   watermark,
+  projectWidth = 1920,
+  projectHeight = 1080,
   onSelectSlide,
   onAddSlide,
   onDuplicateSlide,
@@ -101,7 +105,12 @@ export const SlideSidebar: React.FC<SlideSidebarProps> = ({
               </div>
 
               {/* True 1:1 Scaled Slide Preview (Exact replicate of slide contents) */}
-              <SlideThumbnail slide={slide} watermark={watermark} />
+              <SlideThumbnail
+                slide={slide}
+                watermark={watermark}
+                projectWidth={projectWidth}
+                projectHeight={projectHeight}
+              />
 
               {/* Action Toolbar on Hover / Active */}
               <div

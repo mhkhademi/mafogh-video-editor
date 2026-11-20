@@ -5,9 +5,16 @@ import { SlideElement } from './SlideElement';
 interface SlideThumbnailProps {
   slide: Slide;
   watermark: WatermarkConfig;
+  projectWidth?: number;
+  projectHeight?: number;
 }
 
-export const SlideThumbnail: React.FC<SlideThumbnailProps> = ({ slide, watermark }) => {
+export const SlideThumbnail: React.FC<SlideThumbnailProps> = ({
+  slide,
+  watermark,
+  projectWidth = 1920,
+  projectHeight = 1080,
+}) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState<number>(0.14);
 
@@ -18,7 +25,7 @@ export const SlideThumbnail: React.FC<SlideThumbnailProps> = ({ slide, watermark
       if (containerRef.current) {
         const width = containerRef.current.clientWidth;
         if (width > 0) {
-          setScale(width / 1920);
+          setScale(width / projectWidth);
         }
       }
     };
@@ -27,7 +34,7 @@ export const SlideThumbnail: React.FC<SlideThumbnailProps> = ({ slide, watermark
     const ro = new ResizeObserver(updateScale);
     ro.observe(containerRef.current);
     return () => ro.disconnect();
-  }, []);
+  }, [projectWidth]);
 
   const getBackgroundStyle = (): React.CSSProperties => {
     const bg = slide.background;
@@ -51,13 +58,13 @@ export const SlideThumbnail: React.FC<SlideThumbnailProps> = ({ slide, watermark
   return (
     <div
       ref={containerRef}
-      style={{ aspectRatio: '16 / 9' }}
+      style={{ aspectRatio: `${projectWidth} / ${projectHeight}` }}
       className="w-full rounded-lg border border-slate-700/80 overflow-hidden relative shadow-md pointer-events-none select-none bg-slate-900"
     >
       <div
         style={{
-          width: '1920px',
-          height: '1080px',
+          width: `${projectWidth}px`,
+          height: `${projectHeight}px`,
           transform: `scale(${scale})`,
           transformOrigin: 'top left',
           left: 0,

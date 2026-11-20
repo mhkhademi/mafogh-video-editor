@@ -33,6 +33,7 @@ export const App: React.FC = () => {
     deleteElement,
     resetToTemplate,
     jumpToSlide,
+    setAspectRatio,
   } = useProjectStore();
 
   const [isExportModalOpen, setIsExportModalOpen] = useState<boolean>(false);
@@ -73,6 +74,7 @@ export const App: React.FC = () => {
         onUpdateTitle={(title) => setProject((prev) => ({ ...prev, title }))}
         onResetTemplate={resetToTemplate}
         onOpenExportModal={() => setIsExportModalOpen(true)}
+        onSelectAspectRatio={setAspectRatio}
         onImportProject={(imported) => {
           setProject(imported);
           if (imported.slides?.[0]?.id) {
@@ -88,6 +90,8 @@ export const App: React.FC = () => {
           slides={project.slides}
           activeSlideId={activeSlideId}
           watermark={project.watermark}
+          projectWidth={project.width}
+          projectHeight={project.height}
           onSelectSlide={(id) => {
             jumpToSlide(id);
             setSelectedElementId(null);
@@ -99,12 +103,14 @@ export const App: React.FC = () => {
           onUpdateDuration={(id, dur) => updateSlide(id, { duration: dur })}
         />
 
-        {/* Center: Live Real-time 1920x1080 Stage with 60fps Smooth Transitions */}
+        {/* Center: Live Real-time Dynamic Stage with 60fps Smooth Transitions */}
         <CanvasStage
           slide={displaySlide}
           slideLocalTime={displaySlideLocalTime}
           watermark={project.watermark}
           selectedElementId={selectedElementId}
+          width={project.width}
+          height={project.height}
           onSelectElement={setSelectedElementId}
           onUpdateElement={(elementId, partial) =>
             updateElement(displaySlide.id, elementId, partial)

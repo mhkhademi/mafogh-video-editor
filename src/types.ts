@@ -74,11 +74,14 @@ export interface AudioConfig {
   loop?: boolean;
 }
 
+export type AspectRatioType = '16:9' | '9:16' | '1:1';
+
 export interface Project {
   id: string;
   title: string;
   width: number;
   height: number;
+  aspectRatio?: AspectRatioType;
   fps: number;
   slides: Slide[];
   watermark: WatermarkConfig;

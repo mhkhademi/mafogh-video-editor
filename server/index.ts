@@ -85,7 +85,7 @@ app.post('/api/upload', upload.single('file'), (req, res) => {
 
 // 1. Start a new FFmpeg video export session
 app.post('/api/export/start', (req, res) => {
-  const { title, fps = 30, resolution = '1080p', bitrate = 8_000_000, totalFrames = 0 } = req.body;
+  const { title, fps = 30, resolution = '1080p', bitrate = 8_000_000, totalFrames = 0, width, height } = req.body;
   const ffmpegPath = getFFmpegPath();
 
   if (!fs.existsSync(ffmpegPath) && ffmpegPath !== 'ffmpeg') {
@@ -97,8 +97,8 @@ app.post('/api/export/start', (req, res) => {
   const filename = `${cleanTitle}_${Date.now()}.mp4`;
   const outputFile = path.join(EXPORTS_DIR, filename);
 
-  const targetWidth = resolution === '1080p' ? 1920 : 1280;
-  const targetHeight = resolution === '1080p' ? 1080 : 720;
+  const targetWidth = width ? Math.round(width) : (resolution === '1080p' ? 1920 : 1280);
+  const targetHeight = height ? Math.round(height) : (resolution === '1080p' ? 1080 : 720);
   const targetBitrate = Math.round(bitrate);
 
   // High-compatibility H.264 MP4 encoder settings

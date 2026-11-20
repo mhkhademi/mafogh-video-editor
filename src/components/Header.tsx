@@ -1,6 +1,6 @@
 import React, { useRef } from 'react';
-import { Video, Download, Upload, Sparkles, Film, FileDown } from 'lucide-react';
-import { Project } from '../types';
+import { Video, Download, Upload, Sparkles, Film, FileDown, Monitor, Smartphone, Square } from 'lucide-react';
+import { Project, AspectRatioType } from '../types';
 
 interface HeaderProps {
   project: Project;
@@ -8,6 +8,7 @@ interface HeaderProps {
   onResetTemplate: () => void;
   onOpenExportModal: () => void;
   onImportProject: (imported: Project) => void;
+  onSelectAspectRatio?: (ratio: AspectRatioType) => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -16,6 +17,7 @@ export const Header: React.FC<HeaderProps> = ({
   onResetTemplate,
   onOpenExportModal,
   onImportProject,
+  onSelectAspectRatio,
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -91,6 +93,50 @@ export const Header: React.FC<HeaderProps> = ({
           placeholder="عنوان پروژه..."
           className="bg-transparent hover:bg-slate-900 focus:bg-slate-900 border border-transparent hover:border-slate-800 focus:border-slate-700 rounded-lg px-2.5 py-1 text-sm font-medium text-slate-200 focus:outline-none transition-colors"
         />
+
+        <div className="h-6 w-px bg-slate-800"></div>
+
+        {/* Aspect Ratio Switcher */}
+        <div className="flex items-center bg-slate-900 border border-slate-800 rounded-lg p-0.5 text-xs shadow-inner">
+          <button
+            onClick={() => onSelectAspectRatio?.('16:9')}
+            className={`px-2.5 py-1 rounded-md flex items-center gap-1.5 transition-all cursor-pointer ${
+              (project.aspectRatio || '16:9') === '16:9'
+                ? 'bg-[#6b0b45] text-white shadow font-bold'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+            }`}
+            title="افقی ۱۶:۹ (یوتیوب، وب، دسکتاپ)"
+          >
+            <Monitor size={13} />
+            <span>16:9</span>
+          </button>
+
+          <button
+            onClick={() => onSelectAspectRatio?.('9:16')}
+            className={`px-2.5 py-1 rounded-md flex items-center gap-1.5 transition-all cursor-pointer ${
+              project.aspectRatio === '9:16'
+                ? 'bg-[#6b0b45] text-white shadow font-bold'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+            }`}
+            title="عمودی ۹:۱۶ (استوری، ریلز اینستاگرام، شورتز)"
+          >
+            <Smartphone size={13} />
+            <span>9:16</span>
+          </button>
+
+          <button
+            onClick={() => onSelectAspectRatio?.('1:1')}
+            className={`px-2.5 py-1 rounded-md flex items-center gap-1.5 transition-all cursor-pointer ${
+              project.aspectRatio === '1:1'
+                ? 'bg-[#6b0b45] text-white shadow font-bold'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+            }`}
+            title="مربعی ۱:۱ (پست اسلایدی اینستاگرام و لینکدین)"
+          >
+            <Square size={13} />
+            <span>1:1</span>
+          </button>
+        </div>
       </div>
 
       {/* Action Buttons */}
