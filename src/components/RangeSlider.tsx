@@ -9,7 +9,7 @@ export interface RangeSliderProps {
   unit?: string;
   onChange: (val: number) => void;
   icon?: React.ReactNode;
-  color?: 'indigo' | 'pink' | 'amber' | 'emerald';
+  color?: 'indigo' | 'pink' | 'amber' | 'emerald' | 'rose';
   hint?: string;
   action?: React.ReactNode;
 }
@@ -86,6 +86,16 @@ export const RangeSlider: React.FC<RangeSliderProps> = ({
       badgeText: 'text-emerald-300',
       tooltipTail: 'bg-emerald-600 border-r border-b border-emerald-400/40',
       ringGlow: 'ring-emerald-500/30',
+    },
+    rose: {
+      gradient: 'from-rose-600 via-pink-500 to-red-500',
+      activeThumb: 'border-rose-400 shadow-[0_0_14px_rgba(244,63,94,0.6)]',
+      thumbDot: 'bg-rose-600',
+      badgeBg: 'bg-gradient-to-r from-rose-600 to-red-600',
+      badgeBorder: 'border-rose-400/50',
+      badgeText: 'text-rose-300',
+      tooltipTail: 'bg-rose-600 border-r border-b border-rose-400/40',
+      ringGlow: 'ring-rose-500/30',
     },
   };
 
