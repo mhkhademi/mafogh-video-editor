@@ -213,9 +213,10 @@ export function renderSlideToCanvas(
       ctx.restore();
     } else if (element.type === 'arrow' || (element.type === 'shape' && element.shapeKind !== 'divider')) {
       const color = element.color || '#6b0b45';
-      const strokeWidth = element.strokeWidth || 5;
+      const strokeWidth = element.strokeWidth || 6;
       const arrowW = ((element.width || 25) / 100) * width;
-      const headLen = Math.max(strokeWidth * 3.5, 18);
+      const headW = Math.max(strokeWidth * 3.5, 22);
+      const headH = Math.max(strokeWidth * 3, 20);
 
       ctx.save();
       if (element.rotation) {
@@ -224,20 +225,26 @@ export function renderSlideToCanvas(
 
       ctx.strokeStyle = color;
       ctx.fillStyle = color;
+
+      // Shaft: starts at -arrowW / 2 and ends exactly inside the arrowhead base
+      const startX = -arrowW / 2;
+      const endX = arrowW / 2 - headW + 2;
+
       ctx.lineWidth = strokeWidth;
       ctx.lineCap = 'round';
-
-      // Shaft
       ctx.beginPath();
-      ctx.moveTo(-arrowW / 2, 0);
-      ctx.lineTo(arrowW / 2 - headLen * 0.7, 0);
+      ctx.moveTo(startX, 0);
+      ctx.lineTo(endX, 0);
       ctx.stroke();
 
-      // Arrowhead
+      // Sharp arrowhead triangle: tip at arrowW / 2 with NO protrusion
+      const tipX = arrowW / 2;
+      const baseX = arrowW / 2 - headW;
+
       ctx.beginPath();
-      ctx.moveTo(arrowW / 2, 0);
-      ctx.lineTo(arrowW / 2 - headLen, -headLen * 0.6);
-      ctx.lineTo(arrowW / 2 - headLen, headLen * 0.6);
+      ctx.moveTo(baseX, -headH / 2);
+      ctx.lineTo(tipX, 0);
+      ctx.lineTo(baseX, headH / 2);
       ctx.closePath();
       ctx.fill();
 

@@ -200,41 +200,39 @@ export const SlideElement: React.FC<SlideElementProps> = ({
 
       case 'arrow': {
         const color = element.color || '#6b0b45';
-        const strokeWidth = element.strokeWidth || 5;
-        const headSize = Math.max(strokeWidth * 3.2, 18);
+        const strokeWidth = element.strokeWidth || 6;
+        const headW = Math.max(strokeWidth * 3.5, 22);
+        const headH = Math.max(strokeWidth * 3, 20);
 
         return (
-          <div className="w-full h-8 flex items-center justify-center pointer-events-none px-1">
-            <svg
-              className="w-full h-8 overflow-visible"
-              fill="none"
-              style={{ display: 'block' }}
+          <div className="w-full h-8 flex items-center pointer-events-none select-none">
+            {/* Arrow Shaft: stretches to fill remaining width */}
+            <div
+              className="flex items-center"
+              style={{
+                width: `calc(100% - ${headW - 2}px)`,
+              }}
             >
-              <defs>
-                <marker
-                  id={`arrowhead-${element.id}`}
-                  markerWidth={headSize}
-                  markerHeight={headSize}
-                  refX={headSize * 0.9}
-                  refY={headSize / 2}
-                  orient="auto"
-                  markerUnits="userSpaceOnUse"
-                >
-                  <path
-                    d={`M 0 0 L ${headSize} ${headSize / 2} L 0 ${headSize} z`}
-                    fill={color}
-                  />
-                </marker>
-              </defs>
-              <line
-                x1="4"
-                y1="50%"
-                x2="100%"
-                y2="50%"
-                stroke={color}
-                strokeWidth={strokeWidth}
-                strokeLinecap="round"
-                markerEnd={`url(#arrowhead-${element.id})`}
+              <div
+                className="w-full rounded-l-full"
+                style={{
+                  height: `${strokeWidth}px`,
+                  backgroundColor: color,
+                }}
+              />
+            </div>
+
+            {/* Sharp Arrowhead: fixed size, perfectly aligned, no protrusion */}
+            <svg
+              width={headW}
+              height={headH}
+              viewBox={`0 0 ${headW} ${headH}`}
+              className="shrink-0 overflow-visible"
+              style={{ marginLeft: '-2px' }}
+            >
+              <polygon
+                points={`0,0 ${headW},${headH / 2} 0,${headH}`}
+                fill={color}
               />
             </svg>
           </div>
@@ -283,40 +281,35 @@ export const SlideElement: React.FC<SlideElementProps> = ({
 
         // Arrow fallback
         const color = element.color || '#6b0b45';
-        const strokeWidth = element.strokeWidth || 5;
-        const headSize = Math.max(strokeWidth * 3.2, 18);
+        const strokeWidth = element.strokeWidth || 6;
+        const headW = Math.max(strokeWidth * 3.5, 22);
+        const headH = Math.max(strokeWidth * 3, 20);
         return (
-          <div className="w-full h-8 flex items-center justify-center pointer-events-none px-1">
-            <svg
-              className="w-full h-8 overflow-visible"
-              fill="none"
-              style={{ display: 'block' }}
+          <div className="w-full h-8 flex items-center pointer-events-none select-none">
+            <div
+              className="flex items-center"
+              style={{
+                width: `calc(100% - ${headW - 2}px)`,
+              }}
             >
-              <defs>
-                <marker
-                  id={`arrowhead-fallback-${element.id}`}
-                  markerWidth={headSize}
-                  markerHeight={headSize}
-                  refX={headSize * 0.9}
-                  refY={headSize / 2}
-                  orient="auto"
-                  markerUnits="userSpaceOnUse"
-                >
-                  <path
-                    d={`M 0 0 L ${headSize} ${headSize / 2} L 0 ${headSize} z`}
-                    fill={color}
-                  />
-                </marker>
-              </defs>
-              <line
-                x1="4"
-                y1="50%"
-                x2="100%"
-                y2="50%"
-                stroke={color}
-                strokeWidth={strokeWidth}
-                strokeLinecap="round"
-                markerEnd={`url(#arrowhead-fallback-${element.id})`}
+              <div
+                className="w-full rounded-l-full"
+                style={{
+                  height: `${strokeWidth}px`,
+                  backgroundColor: color,
+                }}
+              />
+            </div>
+            <svg
+              width={headW}
+              height={headH}
+              viewBox={`0 0 ${headW} ${headH}`}
+              className="shrink-0 overflow-visible"
+              style={{ marginLeft: '-2px' }}
+            >
+              <polygon
+                points={`0,0 ${headW},${headH / 2} 0,${headH}`}
+                fill={color}
               />
             </svg>
           </div>
