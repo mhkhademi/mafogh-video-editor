@@ -191,8 +191,9 @@ export const ExportModal: React.FC<ExportModalProps> = ({
     setRenderStatusText('در حال بارگذاری فونت‌ها و تصاویر...');
 
     const dims = getDims(resolution);
-    const targetWidth = dims.width;
-    const targetHeight = dims.height;
+    // H.264 requires even width & height (divisible by 2)
+    const targetWidth = dims.width - (dims.width % 2);
+    const targetHeight = dims.height - (dims.height % 2);
     const targetBitrate = getBitrate(resolution, fps);
     const totalFrames = Math.round(actualTotalDuration * fps);
     setTotalFrameCount(totalFrames);
@@ -246,6 +247,14 @@ export const ExportModal: React.FC<ExportModalProps> = ({
     const isWebCodecsSupported =
       typeof window !== 'undefined' && 'VideoEncoder' in window && 'VideoFrame' in window;
 
+    if (engineMode === 'turbo-gpu' && !isWebCodecsSupported) {
+      setErrorMessage(
+        'مرورگر شما از شتاب‌دهنده سخت‌افزاری WebCodecs پشتیبانی نمی‌کند. لطفاً از مرورگر کروم یا موتور FFmpeg استفاده کنید.'
+      );
+      setIsRendering(false);
+      return;
+    }
+
     if (engineMode === 'turbo-gpu' && isWebCodecsSupported) {
       // ========================================================
       // PATH 0: TURBO HARDWARE GPU (WebCodecs + mp4-muxer) ~60+ FPS!
@@ -258,23 +267,69 @@ export const ExportModal: React.FC<ExportModalProps> = ({
             codec: 'avc',
             width: targetWidth,
             height: targetHeight,
+            frameRate: fps,
           },
-          fastStart: 'in-memory',
+          fastStart: false,
           firstTimestampBehavior: 'offset',
         });
 
+        const frameDurationMicros = Math.round((1 / fps) * 1_000_000);
         let encoderFatalError: string | null = null;
+
         const videoEncoder = new VideoEncoder({
-          output: (chunk, meta) => muxer.addVideoChunk(chunk, meta),
+          output: (chunk, meta) => {
+            try {
+              // Ensure duration is always a valid non-negative number for mp4-muxer
+              const safeDuration =
+                chunk.duration !== null &&
+                chunk.duration !== undefined &&
+                Number.isFinite(chunk.duration) &&
+                chunk.duration > 0
+                  ? chunk.duration
+                  : frameDurationMicros;
+
+              const data = new Uint8Array(chunk.byteLength);
+              chunk.copyTo(data);
+
+              muxer.addVideoChunkRaw(
+                data,
+                chunk.type,
+                chunk.timestamp,
+                safeDuration,
+                meta
+              );
+            } catch (chunkErr: any) {
+              console.error('Error adding chunk to mp4-muxer:', chunkErr);
+              encoderFatalError = chunkErr?.message || 'خطا در بسته‌بندی فریم ویدیویی';
+            }
+          },
           error: (e: any) => {
             console.error('VideoEncoder error:', e);
-            encoderFatalError = e?.message || 'VideoEncoder error';
+            encoderFatalError = e?.message || 'خطای انکود سخت‌افزاری کارت گرافیک';
           },
         });
 
+        // Determine supported H.264 profile
+        let chosenCodec = 'avc1.64002a'; // High Profile 4.2
+        try {
+          const support = await VideoEncoder.isConfigSupported({
+            codec: chosenCodec,
+            width: targetWidth,
+            height: targetHeight,
+            bitrate: targetBitrate,
+            framerate: fps,
+            hardwareAcceleration: 'prefer-hardware',
+          });
+          if (!support.supported) {
+            chosenCodec = 'avc1.4d402a'; // Main Profile fallback
+          }
+        } catch (_) {
+          chosenCodec = 'avc1.64002a';
+        }
+
         // Configure hardware acceleration
-        await videoEncoder.configure({
-          codec: 'avc1.64002a', // High Profile 4.2
+        videoEncoder.configure({
+          codec: chosenCodec,
           width: targetWidth,
           height: targetHeight,
           bitrate: targetBitrate,
@@ -307,16 +362,19 @@ export const ExportModal: React.FC<ExportModalProps> = ({
             targetHeight
           );
 
-          // Direct zero-copy GPU VideoFrame from canvas
+          // Direct zero-copy GPU VideoFrame from canvas with explicit duration
           const timestampMicros = Math.round((f / fps) * 1_000_000);
-          const videoFrame = new VideoFrame(canvas, { timestamp: timestampMicros });
+          const videoFrame = new VideoFrame(canvas, {
+            timestamp: timestampMicros,
+            duration: frameDurationMicros,
+          });
           const isKeyFrame = f % (fps * 2) === 0;
           videoEncoder.encode(videoFrame, { keyFrame: isKeyFrame });
           videoFrame.close();
 
-          // Maintain lightweight encoder queue
-          if (videoEncoder.encodeQueueSize > 5) {
-            await new Promise((resolve) => setTimeout(resolve, 0));
+          // Maintain lightweight encoder queue with proper GPU backpressure
+          while (videoEncoder.encodeQueueSize > 8) {
+            await new Promise((resolve) => setTimeout(resolve, 4));
           }
 
           // Calculate Rolling Window ETA & FPS
@@ -343,10 +401,10 @@ export const ExportModal: React.FC<ExportModalProps> = ({
           }
         }
 
-        setRenderStatusText('در حال ساخت فایل MP4 نهایی...');
+        setRenderStatusText('در حال نهایی‌سازی و ذخیره فایل MP4...');
         await videoEncoder.flush();
-        videoEncoder.close();
         muxer.finalize();
+        videoEncoder.close();
 
         const buffer = muxer.target.buffer;
         const mp4Blob = new Blob([buffer], { type: 'video/mp4' });
@@ -363,19 +421,23 @@ export const ExportModal: React.FC<ExportModalProps> = ({
 
         const mbSize = (mp4Blob.size / (1024 * 1024)).toFixed(1);
         setActualFileSize(`${mbSize} مگابایت`);
-        setRenderStatusText(`رندر توربو کامل شد! زمان کل: ${totalElapsedSec} ثانیه (${mbSize} مگابایت)`);
+        setRenderStatusText(`رندر توربو با موفقیت کامل شد! زمان کل: ${totalElapsedSec} ثانیه (${mbSize} مگابایت)`);
 
         // Automatic Download
+        const cleanTitle = (project.title || 'video').trim().replace(/[/\\?%*:|"<>]/g, '_');
         const a = document.createElement('a');
         a.href = url;
-        a.download = `${project.title || 'video'}.mp4`;
+        a.download = `${cleanTitle}.mp4`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
         return;
       } catch (err: any) {
-        console.warn('WebCodecs GPU render failed, falling back to FFmpeg:', err);
-        setRenderStatusText('در حال سوییچ به موتور FFmpeg استودیو...');
+        console.error('WebCodecs GPU render failed:', err);
+        setRenderStatusText('');
+        setErrorMessage(`خطا در رندر کارت گرافیک: ${err?.message || 'مشکلی رخ داده است'}`);
+        setIsRendering(false);
+        return;
       }
     }
 
