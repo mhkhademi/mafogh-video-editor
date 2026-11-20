@@ -1,0 +1,238 @@
+import express from 'express';
+import cors from 'cors';
+import multer from 'multer';
+import path from 'path';
+import fs from 'fs';
+import { fileURLToPath } from 'url';
+import { spawn, ChildProcessWithoutNullStreams } from 'child_process';
+import { getFFmpegPath } from './ffmpeg';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const app = express();
+const PORT = 3001;
+
+app.use(cors());
+app.use(express.json({ limit: '100mb' }));
+app.use(
+  '/api/export/push-frame',
+  express.raw({ type: ['image/jpeg', 'application/octet-stream'], limit: '20mb' })
+);
+
+// Ensure uploads and output directory exist
+const UPLOADS_DIR = path.join(__dirname, '../uploads');
+const EXPORTS_DIR = path.join(__dirname, '../exports');
+
+if (!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+if (!fs.existsSync(EXPORTS_DIR)) fs.mkdirSync(EXPORTS_DIR, { recursive: true });
+
+app.use('/uploads', express.static(UPLOADS_DIR));
+app.use('/exports', express.static(EXPORTS_DIR));
+
+// Storage configuration for uploaded assets
+const storage = multer.diskStorage({
+  destination: (_req, _file, cb) => {
+    cb(null, UPLOADS_DIR);
+  },
+  filename: (_req, file, cb) => {
+    const ext = path.extname(file.originalname);
+    cb(null, `${Date.now()}-${Math.random().toString(36).substring(7)}${ext}`);
+  },
+});
+
+const upload = multer({ storage });
+
+// Active Export Sessions interface
+interface ExportSession {
+  id: string;
+  ffmpeg: ChildProcessWithoutNullStreams;
+  outputFile: string;
+  filename: string;
+  fps: number;
+  framesReceived: number;
+  totalFrames: number;
+  closePromise: Promise<number | null>;
+  errorLogs: string[];
+}
+
+const activeSessions = new Map<string, ExportSession>();
+
+// Health check endpoint
+app.get('/api/health', (_req, res) => {
+  const ffmpegPath = getFFmpegPath();
+  res.json({
+    status: 'ok',
+    ffmpeg: {
+      found: fs.existsSync(ffmpegPath) || ffmpegPath === 'ffmpeg',
+      path: ffmpegPath,
+    },
+  });
+});
+
+// File upload endpoint for images & audio
+app.post('/api/upload', upload.single('file'), (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ error: 'No file uploaded' });
+  }
+  const fileUrl = `/uploads/${req.file.filename}`;
+  res.json({ url: fileUrl, filename: req.file.filename });
+});
+
+// ==========================================
+// Native High-Precision FFmpeg Video Export
+// ==========================================
+
+// 1. Start a new FFmpeg video export session
+app.post('/api/export/start', (req, res) => {
+  const { title, fps = 30, resolution = '1080p', bitrate = 8_000_000, totalFrames = 0 } = req.body;
+  const ffmpegPath = getFFmpegPath();
+
+  if (!fs.existsSync(ffmpegPath) && ffmpegPath !== 'ffmpeg') {
+    return res.status(500).json({ error: 'Native FFmpeg binary not found on server' });
+  }
+
+  const sessionId = `export_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+  const cleanTitle = (title || 'video').replace(/[/\\?%*:|"<>]/g, '_').trim();
+  const filename = `${cleanTitle}_${Date.now()}.mp4`;
+  const outputFile = path.join(EXPORTS_DIR, filename);
+
+  const targetWidth = resolution === '1080p' ? 1920 : 1280;
+  const targetHeight = resolution === '1080p' ? 1080 : 720;
+  const targetBitrate = Math.round(bitrate);
+
+  // High-compatibility H.264 MP4 encoder settings
+  const ffmpegArgs = [
+    '-y',
+    '-f', 'image2pipe',
+    '-vcodec', 'mjpeg',
+    '-r', String(fps),
+    '-i', '-',
+    '-c:v', 'libx264',
+    '-preset', 'fast',
+    '-profile:v', 'high',
+    '-pix_fmt', 'yuv420p',
+    '-s', `${targetWidth}x${targetHeight}`,
+    '-b:v', `${targetBitrate}`,
+    '-maxrate', `${Math.round(targetBitrate * 1.25)}`,
+    '-bufsize', `${Math.round(targetBitrate * 2)}`,
+    '-movflags', '+faststart',
+    outputFile,
+  ];
+
+  console.log(`[FFmpeg Export] Starting session ${sessionId} -> ${filename}`);
+  const ffmpegProcess = spawn(ffmpegPath, ffmpegArgs);
+  const errorLogs: string[] = [];
+
+  ffmpegProcess.stderr.on('data', (d) => {
+    errorLogs.push(d.toString());
+  });
+
+  const closePromise = new Promise<number | null>((resolve) => {
+    ffmpegProcess.on('close', (code) => {
+      console.log(`[FFmpeg Export] Session ${sessionId} finished with code ${code}`);
+      resolve(code);
+    });
+  });
+
+  activeSessions.set(sessionId, {
+    id: sessionId,
+    ffmpeg: ffmpegProcess,
+    outputFile,
+    filename,
+    fps,
+    framesReceived: 0,
+    totalFrames,
+    closePromise,
+    errorLogs,
+  });
+
+  res.json({ sessionId, filename });
+});
+
+// 2. Stream individual MJPEG frames into FFmpeg stdin
+app.post('/api/export/push-frame', (req, res) => {
+  const sessionId = req.headers['x-session-id'] as string;
+  if (!sessionId || !activeSessions.has(sessionId)) {
+    return res.status(404).json({ error: 'Export session not found' });
+  }
+
+  const session = activeSessions.get(sessionId)!;
+  const frameBuffer = req.body as Buffer;
+
+  if (!frameBuffer || frameBuffer.length === 0) {
+    return res.status(400).json({ error: 'Empty frame buffer' });
+  }
+
+  session.framesReceived++;
+
+  // Write directly into FFmpeg stdin with backpressure support
+  const canContinue = session.ffmpeg.stdin.write(frameBuffer);
+  if (canContinue) {
+    res.json({ ok: true, frame: session.framesReceived });
+  } else {
+    session.ffmpeg.stdin.once('drain', () => {
+      res.json({ ok: true, frame: session.framesReceived });
+    });
+  }
+});
+
+// 3. Finalize and close FFmpeg export
+app.post('/api/export/finalize', async (req, res) => {
+  const { sessionId } = req.body;
+  if (!sessionId || !activeSessions.has(sessionId)) {
+    return res.status(404).json({ error: 'Export session not found' });
+  }
+
+  const session = activeSessions.get(sessionId)!;
+  console.log(
+    `[FFmpeg Export] Finalizing session ${sessionId}. Total frames piped: ${session.framesReceived}`
+  );
+
+  // End input stream
+  session.ffmpeg.stdin.end();
+
+  // Wait for FFmpeg to finish encoding and writing headers
+  const exitCode = await session.closePromise;
+  activeSessions.delete(sessionId);
+
+  if (exitCode !== 0 && !fs.existsSync(session.outputFile)) {
+    console.error(`[FFmpeg Export Error]`, session.errorLogs.slice(-10).join('\n'));
+    return res.status(500).json({
+      error: 'FFmpeg encoding failed',
+      details: session.errorLogs.slice(-5).join('\n'),
+    });
+  }
+
+  const stat = fs.statSync(session.outputFile);
+  console.log(`[FFmpeg Export] Output MP4 ready: ${session.filename} (${(stat.size / (1024 * 1024)).toFixed(2)} MB)`);
+
+  res.json({
+    success: true,
+    url: `/exports/${session.filename}`,
+    filename: session.filename,
+    sizeBytes: stat.size,
+    framesCount: session.framesReceived,
+  });
+});
+
+// 4. Cancel session
+app.post('/api/export/cancel', (req, res) => {
+  const { sessionId } = req.body;
+  if (sessionId && activeSessions.has(sessionId)) {
+    const session = activeSessions.get(sessionId)!;
+    session.ffmpeg.kill('SIGKILL');
+    activeSessions.delete(sessionId);
+    if (fs.existsSync(session.outputFile)) {
+      try {
+        fs.unlinkSync(session.outputFile);
+      } catch (_) {}
+    }
+  }
+  res.json({ ok: true });
+});
+
+app.listen(PORT, () => {
+  console.log(`Video Editor API Server running at http://localhost:${PORT}`);
+  console.log(`FFmpeg binary located at: ${getFFmpegPath()}`);
+});
