@@ -25,6 +25,13 @@ import {
   AlignVerticalJustifyEnd,
   MoveHorizontal,
   Maximize2,
+  Lock,
+  Unlock,
+  Copy,
+  ArrowUp,
+  ArrowDown,
+  ArrowUpToLine,
+  ArrowDownToLine,
 } from 'lucide-react';
 
 interface PropertiesPanelProps {
@@ -34,6 +41,13 @@ interface PropertiesPanelProps {
   onAddElement: (type: ElementType) => void;
   onUpdateElement: (elementId: string, partial: Partial<SlideElement>) => void;
   onDeleteElement: (elementId: string) => void;
+  onDuplicateElement?: (elementId: string) => void;
+  onBringForward?: (elementId: string) => void;
+  onBringToFront?: (elementId: string) => void;
+  onSendBackward?: (elementId: string) => void;
+  onSendToBack?: (elementId: string) => void;
+  onToggleLock?: (elementId: string) => void;
+  onSelectElement?: (elementId: string | null) => void;
 }
 
 export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
@@ -43,8 +57,15 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
   onAddElement,
   onUpdateElement,
   onDeleteElement,
+  onDuplicateElement,
+  onBringForward,
+  onBringToFront,
+  onSendBackward,
+  onSendToBack,
+  onToggleLock,
+  onSelectElement,
 }) => {
-  const [activeTab, setActiveTab] = useState<'slide' | 'element' | 'elements-list'>('slide');
+  const [activeTab, setActiveTab] = useState<'slide' | 'element' | 'layers'>('slide');
 
   // If user selects an element, automatically switch to element tab
   React.useEffect(() => {
@@ -61,23 +82,34 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
           onClick={() => setActiveTab('slide')}
           className={`flex-1 py-3 text-center transition-colors flex items-center justify-center gap-1.5 cursor-pointer ${
             activeTab === 'slide'
-              ? 'text-indigo-400 border-b-2 border-indigo-500 bg-slate-900'
+              ? 'text-indigo-400 border-b-2 border-indigo-500 bg-slate-900 font-bold'
               : 'text-slate-400 hover:text-slate-200'
           }`}
         >
           <Palette size={14} />
-          <span>تنظیمات اسلاید</span>
+          <span>اسلاید</span>
         </button>
         <button
           onClick={() => setActiveTab('element')}
           className={`flex-1 py-3 text-center transition-colors flex items-center justify-center gap-1.5 cursor-pointer ${
             activeTab === 'element'
-              ? 'text-indigo-400 border-b-2 border-indigo-500 bg-slate-900'
+              ? 'text-indigo-400 border-b-2 border-indigo-500 bg-slate-900 font-bold'
               : 'text-slate-400 hover:text-slate-200'
           }`}
         >
           <Sliders size={14} />
-          <span>المان انتخابی</span>
+          <span>المان</span>
+        </button>
+        <button
+          onClick={() => setActiveTab('layers')}
+          className={`flex-1 py-3 text-center transition-colors flex items-center justify-center gap-1.5 cursor-pointer ${
+            activeTab === 'layers'
+              ? 'text-indigo-400 border-b-2 border-indigo-500 bg-slate-900 font-bold'
+              : 'text-slate-400 hover:text-slate-200'
+          }`}
+        >
+          <Layers size={14} />
+          <span>لایه‌ها ({slide.elements.length})</span>
         </button>
       </div>
 
@@ -269,19 +301,52 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
               </div>
             ) : (
               <div className="space-y-5">
-                {/* Header with Delete Button */}
+                {/* Header with Quick Action Buttons */}
                 <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-                  <span className="text-xs font-bold text-slate-300">
-                    ویرایش المان ({selectedElement.type})
-                  </span>
-                  <button
-                    onClick={() => onDeleteElement(selectedElement.id)}
-                    className="p-1.5 text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors flex items-center gap-1 text-xs"
-                    title="حذف المان"
-                  >
-                    <Trash2 size={14} />
-                    <span>حذف</span>
-                  </button>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs font-bold text-slate-300">
+                      ویرایش ({selectedElement.type})
+                    </span>
+                    {selectedElement.locked && (
+                      <span className="px-1.5 py-0.5 bg-amber-500/20 text-amber-400 rounded text-[10px] flex items-center gap-1">
+                        <Lock size={10} />
+                        قفل
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-1">
+                    {/* Duplicate button */}
+                    <button
+                      onClick={() => onDuplicateElement?.(selectedElement.id)}
+                      className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors"
+                      title="ایجاد کپی (Ctrl+D)"
+                    >
+                      <Copy size={14} />
+                    </button>
+
+                    {/* Lock / Unlock button */}
+                    <button
+                      onClick={() => onToggleLock?.(selectedElement.id)}
+                      className={`p-1.5 rounded-lg transition-colors ${
+                        selectedElement.locked
+                          ? 'text-amber-400 bg-amber-500/15'
+                          : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                      }`}
+                      title={selectedElement.locked ? 'باز کردن قفل المان' : 'قفل کردن موقعیت المان'}
+                    >
+                      {selectedElement.locked ? <Lock size={14} /> : <Unlock size={14} />}
+                    </button>
+
+                    {/* Delete button */}
+                    <button
+                      onClick={() => onDeleteElement(selectedElement.id)}
+                      className="p-1.5 text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors"
+                      title="حذف المان (Delete)"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
                 </div>
 
                 {/* Content Input (Text vs Image URL/Upload) */}
@@ -631,6 +696,47 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                   />
                 </div>
 
+                {/* Layer Order (Z-Index) Controls */}
+                <div className="border-t border-slate-800 pt-4 space-y-2.5">
+                  <label className="block text-xs font-semibold text-slate-300">
+                    ترتیب لایه (Z-Index)
+                  </label>
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <button
+                      onClick={() => onBringToFront?.(selectedElement.id)}
+                      className="py-1.5 px-2 bg-slate-800 hover:bg-slate-750 text-slate-300 hover:text-white rounded-lg flex items-center justify-center gap-1.5 border border-slate-700/60 transition-colors cursor-pointer"
+                      title="انتقال به بالاترین رو"
+                    >
+                      <ArrowUpToLine size={13} className="text-emerald-400" />
+                      <span>بالاترین رو</span>
+                    </button>
+                    <button
+                      onClick={() => onBringForward?.(selectedElement.id)}
+                      className="py-1.5 px-2 bg-slate-800 hover:bg-slate-750 text-slate-300 hover:text-white rounded-lg flex items-center justify-center gap-1.5 border border-slate-700/60 transition-colors cursor-pointer"
+                      title="یک لایه به رو"
+                    >
+                      <ArrowUp size={13} className="text-emerald-400" />
+                      <span>یک پله به رو</span>
+                    </button>
+                    <button
+                      onClick={() => onSendBackward?.(selectedElement.id)}
+                      className="py-1.5 px-2 bg-slate-800 hover:bg-slate-750 text-slate-300 hover:text-white rounded-lg flex items-center justify-center gap-1.5 border border-slate-700/60 transition-colors cursor-pointer"
+                      title="یک لایه به زیر"
+                    >
+                      <ArrowDown size={13} className="text-amber-400" />
+                      <span>یک پله به زیر</span>
+                    </button>
+                    <button
+                      onClick={() => onSendToBack?.(selectedElement.id)}
+                      className="py-1.5 px-2 bg-slate-800 hover:bg-slate-750 text-slate-300 hover:text-white rounded-lg flex items-center justify-center gap-1.5 border border-slate-700/60 transition-colors cursor-pointer"
+                      title="انتقال به پایین‌ترین زیر"
+                    >
+                      <ArrowDownToLine size={13} className="text-amber-400" />
+                      <span>پایین‌ترین زیر</span>
+                    </button>
+                  </div>
+                </div>
+
                 {/* ================= ANIMATION CONTROLS ================= */}
                 <div className="border-t border-slate-800 pt-4 space-y-3">
                   <div className="flex items-center gap-1.5 text-xs font-bold text-indigo-400">
@@ -698,6 +804,103 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                     />
                   </div>
                 </div>
+              </div>
+            )}
+          </div>
+        )}
+        {/* ================= TAB 3: LAYERS MANAGEMENT ================= */}
+        {activeTab === 'layers' && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between pb-2 border-b border-slate-800">
+              <span className="text-xs font-bold text-slate-300">
+                لایه‌های اسلاید ({slide.elements.length} المان)
+              </span>
+              <span className="text-[10px] text-slate-500">
+                بالاتر = روی همه المان‌ها
+              </span>
+            </div>
+
+            {slide.elements.length === 0 ? (
+              <div className="text-center py-10 text-slate-500 text-xs">
+                هیچ المانی در این اسلاید وجود ندارد.
+              </div>
+            ) : (
+              <div className="space-y-1.5">
+                {[...slide.elements].reverse().map((el, revIndex) => {
+                  const actualIndex = slide.elements.length - 1 - revIndex;
+                  const isSelected = selectedElement?.id === el.id;
+
+                  return (
+                    <div
+                      key={el.id}
+                      onClick={() => onSelectElement?.(el.id)}
+                      className={`p-2.5 rounded-lg border flex items-center justify-between text-xs transition-all cursor-pointer ${
+                        isSelected
+                          ? 'border-indigo-500 bg-indigo-600/15 text-white shadow-md'
+                          : 'border-slate-800 bg-slate-850 hover:bg-slate-800 text-slate-300'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 overflow-hidden flex-1 min-w-0 ml-2">
+                        {el.type === 'image' ? (
+                          <ImageIcon size={14} className="text-violet-400 shrink-0" />
+                        ) : el.type === 'title' ? (
+                          <Type size={14} className="text-indigo-400 shrink-0" />
+                        ) : el.type === 'list-box' ? (
+                          <ListOrdered size={14} className="text-pink-400 shrink-0" />
+                        ) : (
+                          <Layers size={14} className="text-amber-400 shrink-0" />
+                        )}
+
+                        <span className="truncate text-xs font-medium">
+                          {el.content || `(${el.type})`}
+                        </span>
+                      </div>
+
+                      {/* Layer Actions */}
+                      <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
+                        {/* Lock / Unlock */}
+                        <button
+                          onClick={() => onToggleLock?.(el.id)}
+                          className={`p-1 rounded transition-colors ${
+                            el.locked ? 'text-amber-400' : 'text-slate-500 hover:text-slate-200'
+                          }`}
+                          title={el.locked ? 'باز کردن قفل' : 'قفل کردن'}
+                        >
+                          {el.locked ? <Lock size={13} /> : <Unlock size={13} />}
+                        </button>
+
+                        {/* Move Up in Z-index (Forward) */}
+                        <button
+                          disabled={actualIndex === slide.elements.length - 1}
+                          onClick={() => onBringForward?.(el.id)}
+                          className="p-1 text-slate-500 hover:text-slate-200 disabled:opacity-20 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                          title="یک لایه به رو"
+                        >
+                          <ArrowUp size={13} />
+                        </button>
+
+                        {/* Move Down in Z-index (Backward) */}
+                        <button
+                          disabled={actualIndex === 0}
+                          onClick={() => onSendBackward?.(el.id)}
+                          className="p-1 text-slate-500 hover:text-slate-200 disabled:opacity-20 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                          title="یک لایه به زیر"
+                        >
+                          <ArrowDown size={13} />
+                        </button>
+
+                        {/* Delete */}
+                        <button
+                          onClick={() => onDeleteElement(el.id)}
+                          className="p-1 text-slate-500 hover:text-rose-400 transition-colors cursor-pointer"
+                          title="حذف"
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>

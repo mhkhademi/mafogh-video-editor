@@ -1,4 +1,5 @@
 import React from 'react';
+import { Lock } from 'lucide-react';
 import { SlideElement as ISlideElement } from '../types';
 
 interface SlideElementProps {
@@ -246,88 +247,97 @@ export const SlideElement: React.FC<SlideElementProps> = ({
       }}
       className={`group relative select-none ${
         isSelected
-          ? 'cursor-grab active:cursor-grabbing ring-2 ring-indigo-500 ring-offset-2 ring-offset-transparent shadow-2xl rounded-lg'
+          ? element.locked
+            ? 'cursor-default ring-2 ring-amber-500/80 ring-offset-2 ring-offset-transparent shadow-xl rounded-lg'
+            : 'cursor-grab active:cursor-grabbing ring-2 ring-indigo-500 ring-offset-2 ring-offset-transparent shadow-2xl rounded-lg'
           : 'cursor-pointer hover:ring-1 hover:ring-indigo-400/50'
       }`}
     >
       {renderContent()}
 
       {/* Interactive Selection Resize Handles & coordinate indicator */}
-      {isSelected && (
-        <>
-          {/* Top-right handle */}
-          <div
-            onMouseDown={(e) => onResizeMouseDown?.(e, 'ne')}
-            className="absolute -top-2.5 -right-2.5 w-4 h-4 bg-white rounded-full border-2 border-indigo-600 shadow-md flex items-center justify-center cursor-nesw-resize hover:scale-125 transition-transform z-40"
-            title="تغییر اندازه"
-          >
-            <span className="w-1.5 h-1.5 bg-indigo-600 rounded-full"></span>
+      {isSelected && !isExporting && (
+        element.locked ? (
+          <div className="absolute -top-9 left-1/2 -translate-x-1/2 px-2.5 py-0.5 bg-amber-600/90 text-white rounded-md text-[11px] font-bold shadow-lg pointer-events-none flex items-center gap-1.5 whitespace-nowrap border border-amber-400/40 z-30">
+            <Lock size={12} />
+            <span>المان قفل شده است</span>
           </div>
+        ) : (
+          <>
+            {/* Top-right handle */}
+            <div
+              onMouseDown={(e) => onResizeMouseDown?.(e, 'ne')}
+              className="absolute -top-2.5 -right-2.5 w-4 h-4 bg-white rounded-full border-2 border-indigo-600 shadow-md flex items-center justify-center cursor-nesw-resize hover:scale-125 transition-transform z-40"
+              title="تغییر اندازه"
+            >
+              <span className="w-1.5 h-1.5 bg-indigo-600 rounded-full"></span>
+            </div>
 
-          {/* Top-left handle */}
-          <div
-            onMouseDown={(e) => onResizeMouseDown?.(e, 'nw')}
-            className="absolute -top-2.5 -left-2.5 w-4 h-4 bg-white rounded-full border-2 border-indigo-600 shadow-md flex items-center justify-center cursor-nwse-resize hover:scale-125 transition-transform z-40"
-            title="تغییر اندازه"
-          >
-            <span className="w-1.5 h-1.5 bg-indigo-600 rounded-full"></span>
-          </div>
+            {/* Top-left handle */}
+            <div
+              onMouseDown={(e) => onResizeMouseDown?.(e, 'nw')}
+              className="absolute -top-2.5 -left-2.5 w-4 h-4 bg-white rounded-full border-2 border-indigo-600 shadow-md flex items-center justify-center cursor-nwse-resize hover:scale-125 transition-transform z-40"
+              title="تغییر اندازه"
+            >
+              <span className="w-1.5 h-1.5 bg-indigo-600 rounded-full"></span>
+            </div>
 
-          {/* Bottom-right handle */}
-          <div
-            onMouseDown={(e) => onResizeMouseDown?.(e, 'se')}
-            className="absolute -bottom-2.5 -right-2.5 w-4 h-4 bg-white rounded-full border-2 border-indigo-600 shadow-md flex items-center justify-center cursor-nwse-resize hover:scale-125 transition-transform z-40"
-            title="تغییر اندازه"
-          >
-            <span className="w-1.5 h-1.5 bg-indigo-600 rounded-full"></span>
-          </div>
+            {/* Bottom-right handle */}
+            <div
+              onMouseDown={(e) => onResizeMouseDown?.(e, 'se')}
+              className="absolute -bottom-2.5 -right-2.5 w-4 h-4 bg-white rounded-full border-2 border-indigo-600 shadow-md flex items-center justify-center cursor-nwse-resize hover:scale-125 transition-transform z-40"
+              title="تغییر اندازه"
+            >
+              <span className="w-1.5 h-1.5 bg-indigo-600 rounded-full"></span>
+            </div>
 
-          {/* Bottom-left handle */}
-          <div
-            onMouseDown={(e) => onResizeMouseDown?.(e, 'sw')}
-            className="absolute -bottom-2.5 -left-2.5 w-4 h-4 bg-white rounded-full border-2 border-indigo-600 shadow-md flex items-center justify-center cursor-nesw-resize hover:scale-125 transition-transform z-40"
-            title="تغییر اندازه"
-          >
-            <span className="w-1.5 h-1.5 bg-indigo-600 rounded-full"></span>
-          </div>
+            {/* Bottom-left handle */}
+            <div
+              onMouseDown={(e) => onResizeMouseDown?.(e, 'sw')}
+              className="absolute -bottom-2.5 -left-2.5 w-4 h-4 bg-white rounded-full border-2 border-indigo-600 shadow-md flex items-center justify-center cursor-nesw-resize hover:scale-125 transition-transform z-40"
+              title="تغییر اندازه"
+            >
+              <span className="w-1.5 h-1.5 bg-indigo-600 rounded-full"></span>
+            </div>
 
-          {/* Right edge handle (Widen/Narrow box width independently) */}
-          <div
-            onMouseDown={(e) => onResizeMouseDown?.(e, 'e')}
-            className="absolute top-1/2 -right-2.5 -translate-y-1/2 w-2.5 h-7 bg-white rounded-full border-2 border-indigo-600 shadow-md flex items-center justify-center cursor-ew-resize hover:scale-125 hover:bg-indigo-50 transition-all z-40"
-            title="تغییر عرض کادر (تک‌خطی یا چندخطی کردن متن)"
-          >
-            <div className="w-0.5 h-3 bg-indigo-600 rounded-full"></div>
-          </div>
+            {/* Right edge handle (Widen/Narrow box width independently) */}
+            <div
+              onMouseDown={(e) => onResizeMouseDown?.(e, 'e')}
+              className="absolute top-1/2 -right-2.5 -translate-y-1/2 w-2.5 h-7 bg-white rounded-full border-2 border-indigo-600 shadow-md flex items-center justify-center cursor-ew-resize hover:scale-125 hover:bg-indigo-50 transition-all z-40"
+              title="تغییر عرض کادر (تک‌خطی یا چندخطی کردن متن)"
+            >
+              <div className="w-0.5 h-3 bg-indigo-600 rounded-full"></div>
+            </div>
 
-          {/* Left edge handle (Widen/Narrow box width independently) */}
-          <div
-            onMouseDown={(e) => onResizeMouseDown?.(e, 'w')}
-            className="absolute top-1/2 -left-2.5 -translate-y-1/2 w-2.5 h-7 bg-white rounded-full border-2 border-indigo-600 shadow-md flex items-center justify-center cursor-ew-resize hover:scale-125 hover:bg-indigo-50 transition-all z-40"
-            title="تغییر عرض کادر (تک‌خطی یا چندخطی کردن متن)"
-          >
-            <div className="w-0.5 h-3 bg-indigo-600 rounded-full"></div>
-          </div>
+            {/* Left edge handle (Widen/Narrow box width independently) */}
+            <div
+              onMouseDown={(e) => onResizeMouseDown?.(e, 'w')}
+              className="absolute top-1/2 -left-2.5 -translate-y-1/2 w-2.5 h-7 bg-white rounded-full border-2 border-indigo-600 shadow-md flex items-center justify-center cursor-ew-resize hover:scale-125 hover:bg-indigo-50 transition-all z-40"
+              title="تغییر عرض کادر (تک‌خطی یا چندخطی کردن متن)"
+            >
+              <div className="w-0.5 h-3 bg-indigo-600 rounded-full"></div>
+            </div>
 
-          {/* Floating coordinate and size badge */}
-          <div className="absolute -top-9 left-1/2 -translate-x-1/2 px-2.5 py-0.5 bg-indigo-600 text-white rounded-md text-[11px] font-mono font-bold shadow-lg pointer-events-none flex items-center gap-1.5 whitespace-nowrap border border-indigo-400/40 z-30">
-            <span>X: {element.x}%</span>
-            <span className="opacity-60">|</span>
-            <span>Y: {element.y}%</span>
-            {element.type !== 'image' && element.fontSize && (
-              <>
-                <span className="opacity-60">|</span>
-                <span>فونت: {element.fontSize}px</span>
-              </>
-            )}
-            {elementWidth && (
-              <>
-                <span className="opacity-60">|</span>
-                <span>عرض: {elementWidth}%</span>
-              </>
-            )}
-          </div>
-        </>
+            {/* Floating coordinate and size badge */}
+            <div className="absolute -top-9 left-1/2 -translate-x-1/2 px-2.5 py-0.5 bg-indigo-600 text-white rounded-md text-[11px] font-mono font-bold shadow-lg pointer-events-none flex items-center gap-1.5 whitespace-nowrap border border-indigo-400/40 z-30">
+              <span>X: {element.x}%</span>
+              <span className="opacity-60">|</span>
+              <span>Y: {element.y}%</span>
+              {element.type !== 'image' && element.fontSize && (
+                <>
+                  <span className="opacity-60">|</span>
+                  <span>فونت: {element.fontSize}px</span>
+                </>
+              )}
+              {elementWidth && (
+                <>
+                  <span className="opacity-60">|</span>
+                  <span>عرض: {elementWidth}%</span>
+                </>
+              )}
+            </div>
+          </>
+        )
       )}
     </div>
   );

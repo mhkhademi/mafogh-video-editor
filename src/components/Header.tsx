@@ -1,9 +1,13 @@
 import React, { useRef } from 'react';
-import { Video, Download, Upload, Sparkles, Film, FileDown, Monitor, Smartphone, Square } from 'lucide-react';
+import { Video, Download, Upload, Sparkles, Film, FileDown, Monitor, Smartphone, Square, RectangleVertical, Undo2, Redo2 } from 'lucide-react';
 import { Project, AspectRatioType } from '../types';
 
 interface HeaderProps {
   project: Project;
+  canUndo?: boolean;
+  canRedo?: boolean;
+  onUndo?: () => void;
+  onRedo?: () => void;
   onUpdateTitle: (title: string) => void;
   onResetTemplate: () => void;
   onOpenExportModal: () => void;
@@ -13,6 +17,10 @@ interface HeaderProps {
 
 export const Header: React.FC<HeaderProps> = ({
   project,
+  canUndo = false,
+  canRedo = false,
+  onUndo,
+  onRedo,
   onUpdateTitle,
   onResetTemplate,
   onOpenExportModal,
@@ -96,6 +104,36 @@ export const Header: React.FC<HeaderProps> = ({
 
         <div className="h-6 w-px bg-slate-800"></div>
 
+        {/* Undo / Redo Buttons */}
+        <div className="flex items-center gap-1 bg-slate-900 border border-slate-800 rounded-lg p-0.5">
+          <button
+            onClick={onUndo}
+            disabled={!canUndo}
+            className={`p-1.5 rounded-md transition-all cursor-pointer ${
+              canUndo
+                ? 'text-slate-300 hover:text-white hover:bg-slate-800'
+                : 'text-slate-600 cursor-not-allowed opacity-40'
+            }`}
+            title="بازگشت به عقب (Ctrl+Z)"
+          >
+            <Undo2 size={15} />
+          </button>
+          <button
+            onClick={onRedo}
+            disabled={!canRedo}
+            className={`p-1.5 rounded-md transition-all cursor-pointer ${
+              canRedo
+                ? 'text-slate-300 hover:text-white hover:bg-slate-800'
+                : 'text-slate-600 cursor-not-allowed opacity-40'
+            }`}
+            title="انجام مجدد (Ctrl+Y)"
+          >
+            <Redo2 size={15} />
+          </button>
+        </div>
+
+        <div className="h-6 w-px bg-slate-800"></div>
+
         {/* Aspect Ratio Switcher */}
         <div className="flex items-center bg-slate-900 border border-slate-800 rounded-lg p-0.5 text-xs shadow-inner">
           <button
@@ -135,6 +173,19 @@ export const Header: React.FC<HeaderProps> = ({
           >
             <Square size={13} />
             <span>1:1</span>
+          </button>
+
+          <button
+            onClick={() => onSelectAspectRatio?.('4:5')}
+            className={`px-2.5 py-1 rounded-md flex items-center gap-1.5 transition-all cursor-pointer ${
+              project.aspectRatio === '4:5'
+                ? 'bg-[#6b0b45] text-white shadow font-bold'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+            }`}
+            title="عمودی پرتره ۴:۵ (پست‌های ویدیویی اینستاگرام)"
+          >
+            <RectangleVertical size={13} />
+            <span>4:5</span>
           </button>
         </div>
       </div>

@@ -35,6 +35,9 @@ export interface SlideElement {
   
   // Animation
   animation: AnimationConfig;
+  
+  // Layer & Lock
+  locked?: boolean;
 }
 
 export interface SlideBackground {
@@ -74,7 +77,7 @@ export interface AudioConfig {
   loop?: boolean;
 }
 
-export type AspectRatioType = '16:9' | '9:16' | '1:1';
+export type AspectRatioType = '16:9' | '9:16' | '1:1' | '4:5';
 
 export interface Project {
   id: string;

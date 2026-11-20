@@ -44,7 +44,7 @@ export const CanvasStage: React.FC<CanvasStageProps> = ({
     e.stopPropagation();
     onSelectElement(el.id);
 
-    if (!onUpdateElement) return;
+    if (el.locked || !onUpdateElement) return;
 
     const startMouseX = e.clientX;
     const startMouseY = e.clientY;
@@ -108,7 +108,7 @@ export const CanvasStage: React.FC<CanvasStageProps> = ({
     e.preventDefault();
     onSelectElement(el.id);
 
-    if (!onUpdateElement) return;
+    if (el.locked || !onUpdateElement) return;
 
     const startMouseX = e.clientX;
     const startMouseY = e.clientY;

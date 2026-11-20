@@ -34,11 +34,21 @@ export const App: React.FC = () => {
     resetToTemplate,
     jumpToSlide,
     setAspectRatio,
+    undo,
+    redo,
+    canUndo,
+    canRedo,
+    duplicateElement,
+    bringForward,
+    bringToFront,
+    sendBackward,
+    sendToBack,
+    toggleLockElement,
   } = useProjectStore();
 
   const [isExportModalOpen, setIsExportModalOpen] = useState<boolean>(false);
 
-  // Global Keyboard shortcuts: Spacebar to toggle Play/Pause
+  // Global Keyboard shortcuts: Spacebar, Undo/Redo, Delete, Duplicate, Arrow Keys
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       // Don't intercept if user is typing in an input or textarea
@@ -47,6 +57,7 @@ export const App: React.FC = () => {
         return;
       }
 
+      // Spacebar: Play / Pause
       if (e.code === 'Space') {
         e.preventDefault();
         setIsPlaying((prev) => {
@@ -55,12 +66,92 @@ export const App: React.FC = () => {
           }
           return !prev;
         });
+        return;
+      }
+
+      // Ctrl+Z: Undo
+      if ((e.ctrlKey || e.metaKey) && !e.shiftKey && (e.key === 'z' || e.key === 'Z')) {
+        e.preventDefault();
+        undo();
+        return;
+      }
+
+      // Ctrl+Y or Ctrl+Shift+Z: Redo
+      if (
+        ((e.ctrlKey || e.metaKey) && (e.key === 'y' || e.key === 'Y')) ||
+        ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'z' || e.key === 'Z'))
+      ) {
+        e.preventDefault();
+        redo();
+        return;
+      }
+
+      // Delete / Backspace: Delete selected element
+      if (selectedElementId && (e.key === 'Delete' || e.key === 'Backspace')) {
+        e.preventDefault();
+        deleteElement(activeSlide.id, selectedElementId);
+        return;
+      }
+
+      // Ctrl+D: Duplicate selected element
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'd' || e.key === 'D')) {
+        e.preventDefault();
+        if (selectedElementId) {
+          duplicateElement(activeSlide.id, selectedElementId);
+        }
+        return;
+      }
+
+      // Arrow Keys: Nudge selected element (1% or 0.2% with Shift)
+      if (selectedElementId && selectedElement && !selectedElement.locked) {
+        const step = e.shiftKey ? 0.2 : 1;
+        if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          updateElement(activeSlide.id, selectedElementId, {
+            y: Math.max(0, Math.min(100, Number((selectedElement.y - step).toFixed(1)))),
+          });
+          return;
+        }
+        if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          updateElement(activeSlide.id, selectedElementId, {
+            y: Math.max(0, Math.min(100, Number((selectedElement.y + step).toFixed(1)))),
+          });
+          return;
+        }
+        if (e.key === 'ArrowLeft') {
+          e.preventDefault();
+          updateElement(activeSlide.id, selectedElementId, {
+            x: Math.max(0, Math.min(100, Number((selectedElement.x - step).toFixed(1)))),
+          });
+          return;
+        }
+        if (e.key === 'ArrowRight') {
+          e.preventDefault();
+          updateElement(activeSlide.id, selectedElementId, {
+            x: Math.max(0, Math.min(100, Number((selectedElement.x + step).toFixed(1)))),
+          });
+          return;
+        }
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [setIsPlaying, currentTime, totalDuration, setCurrentTime]);
+  }, [
+    setIsPlaying,
+    currentTime,
+    totalDuration,
+    setCurrentTime,
+    undo,
+    redo,
+    selectedElementId,
+    selectedElement,
+    activeSlide.id,
+    deleteElement,
+    duplicateElement,
+    updateElement,
+  ]);
 
   // Preview canvas is ALWAYS driven by the scrubber / current time position
   const displaySlide = currentSlideInfo?.slide || activeSlide;
@@ -71,6 +162,10 @@ export const App: React.FC = () => {
       {/* Top Application Bar */}
       <Header
         project={project}
+        canUndo={canUndo}
+        canRedo={canRedo}
+        onUndo={undo}
+        onRedo={redo}
         onUpdateTitle={(title) => setProject((prev) => ({ ...prev, title }))}
         onResetTemplate={resetToTemplate}
         onOpenExportModal={() => setIsExportModalOpen(true)}
@@ -127,6 +222,13 @@ export const App: React.FC = () => {
             updateElement(activeSlide.id, elementId, partial)
           }
           onDeleteElement={(elementId) => deleteElement(activeSlide.id, elementId)}
+          onDuplicateElement={(elementId) => duplicateElement(activeSlide.id, elementId)}
+          onBringForward={(elementId) => bringForward(activeSlide.id, elementId)}
+          onBringToFront={(elementId) => bringToFront(activeSlide.id, elementId)}
+          onSendBackward={(elementId) => sendBackward(activeSlide.id, elementId)}
+          onSendToBack={(elementId) => sendToBack(activeSlide.id, elementId)}
+          onToggleLock={(elementId) => toggleLockElement(activeSlide.id, elementId)}
+          onSelectElement={setSelectedElementId}
         />
       </div>
 

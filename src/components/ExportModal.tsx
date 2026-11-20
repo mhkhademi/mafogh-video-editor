@@ -95,6 +95,9 @@ export const ExportModal: React.FC<ExportModalProps> = ({
     } else if (project.aspectRatio === '1:1') {
       baseW = 1080;
       baseH = 1080;
+    } else if (project.aspectRatio === '4:5') {
+      baseW = 1080;
+      baseH = 1350;
     } else if (project.aspectRatio === '16:9') {
       baseW = 1920;
       baseH = 1080;

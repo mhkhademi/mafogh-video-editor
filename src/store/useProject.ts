@@ -20,6 +20,34 @@ export function useProjectStore() {
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [currentTime, setCurrentTime] = useState<number>(0);
 
+  // History Stack for Undo/Redo (Ctrl+Z / Ctrl+Y)
+  const [past, setPast] = useState<Project[]>([]);
+  const [future, setFuture] = useState<Project[]>([]);
+
+  // Push current state to past history stack
+  const saveSnapshot = useCallback(() => {
+    setPast((prev) => [...prev.slice(-30), project]);
+    setFuture([]);
+  }, [project]);
+
+  const undo = useCallback(() => {
+    if (past.length === 0) return;
+    const previous = past[past.length - 1];
+    const newPast = past.slice(0, past.length - 1);
+    setPast(newPast);
+    setFuture((prev) => [project, ...prev]);
+    setProject(previous);
+  }, [past, project]);
+
+  const redo = useCallback(() => {
+    if (future.length === 0) return;
+    const next = future[0];
+    const newFuture = future.slice(1);
+    setFuture(newFuture);
+    setPast((prev) => [...prev, project]);
+    setProject(next);
+  }, [future, project]);
+
   // Auto-save project changes to localStorage
   useEffect(() => {
     localStorage.setItem('mafogh_editor_project', JSON.stringify(project));
@@ -350,6 +378,7 @@ export function useProjectStore() {
   );
 
   const deleteElement = useCallback((slideId: string, elementId: string) => {
+    saveSnapshot();
     setProject((prev) => ({
       ...prev,
       slides: prev.slides.map((s) =>
@@ -362,9 +391,114 @@ export function useProjectStore() {
       ),
     }));
     setSelectedElementId(null);
-  }, []);
+  }, [saveSnapshot]);
+
+  const duplicateElement = useCallback((slideId: string, elementId: string) => {
+    saveSnapshot();
+    setProject((prev) => ({
+      ...prev,
+      slides: prev.slides.map((s) => {
+        if (s.id !== slideId) return s;
+        const el = s.elements.find((e) => e.id === elementId);
+        if (!el) return s;
+        const copy: SlideElement = {
+          ...JSON.parse(JSON.stringify(el)),
+          id: `el-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+          x: Math.min(95, el.x + 3),
+          y: Math.min(95, el.y + 3),
+        };
+        setTimeout(() => setSelectedElementId(copy.id), 0);
+        return {
+          ...s,
+          elements: [...s.elements, copy],
+        };
+      }),
+    }));
+  }, [saveSnapshot]);
+
+  const bringForward = useCallback((slideId: string, elementId: string) => {
+    saveSnapshot();
+    setProject((prev) => ({
+      ...prev,
+      slides: prev.slides.map((s) => {
+        if (s.id !== slideId) return s;
+        const idx = s.elements.findIndex((e) => e.id === elementId);
+        if (idx === -1 || idx === s.elements.length - 1) return s;
+        const newEls = [...s.elements];
+        const [moved] = newEls.splice(idx, 1);
+        newEls.splice(idx + 1, 0, moved);
+        return { ...s, elements: newEls };
+      }),
+    }));
+  }, [saveSnapshot]);
+
+  const bringToFront = useCallback((slideId: string, elementId: string) => {
+    saveSnapshot();
+    setProject((prev) => ({
+      ...prev,
+      slides: prev.slides.map((s) => {
+        if (s.id !== slideId) return s;
+        const idx = s.elements.findIndex((e) => e.id === elementId);
+        if (idx === -1 || idx === s.elements.length - 1) return s;
+        const newEls = [...s.elements];
+        const [moved] = newEls.splice(idx, 1);
+        newEls.push(moved);
+        return { ...s, elements: newEls };
+      }),
+    }));
+  }, [saveSnapshot]);
+
+  const sendBackward = useCallback((slideId: string, elementId: string) => {
+    saveSnapshot();
+    setProject((prev) => ({
+      ...prev,
+      slides: prev.slides.map((s) => {
+        if (s.id !== slideId) return s;
+        const idx = s.elements.findIndex((e) => e.id === elementId);
+        if (idx <= 0) return s;
+        const newEls = [...s.elements];
+        const [moved] = newEls.splice(idx, 1);
+        newEls.splice(idx - 1, 0, moved);
+        return { ...s, elements: newEls };
+      }),
+    }));
+  }, [saveSnapshot]);
+
+  const sendToBack = useCallback((slideId: string, elementId: string) => {
+    saveSnapshot();
+    setProject((prev) => ({
+      ...prev,
+      slides: prev.slides.map((s) => {
+        if (s.id !== slideId) return s;
+        const idx = s.elements.findIndex((e) => e.id === elementId);
+        if (idx <= 0) return s;
+        const newEls = [...s.elements];
+        const [moved] = newEls.splice(idx, 1);
+        newEls.unshift(moved);
+        return { ...s, elements: newEls };
+      }),
+    }));
+  }, [saveSnapshot]);
+
+  const toggleLockElement = useCallback((slideId: string, elementId: string) => {
+    saveSnapshot();
+    setProject((prev) => ({
+      ...prev,
+      slides: prev.slides.map((s) =>
+        s.id === slideId
+          ? {
+              ...s,
+              elements: s.elements.map((el) =>
+                el.id === elementId ? { ...el, locked: !el.locked } : el
+              ),
+            }
+          : s
+      ),
+    }));
+  }, [saveSnapshot]);
 
   const setAspectRatio = useCallback((ratio: AspectRatioType) => {
+    saveSnapshot();
     setProject((prev) => {
       let width = 1920;
       let height = 1080;
@@ -374,6 +508,9 @@ export function useProjectStore() {
       } else if (ratio === '1:1') {
         width = 1080;
         height = 1080;
+      } else if (ratio === '4:5') {
+        width = 1080;
+        height = 1350;
       } else {
         width = 1920;
         height = 1080;
@@ -385,7 +522,7 @@ export function useProjectStore() {
         height,
       };
     });
-  }, []);
+  }, [saveSnapshot]);
 
   const resetToTemplate = useCallback(() => {
     if (confirm('آیا مایلید تمام اسلایدها با قالب پیش‌فرض LTV بازنشانی شوند؟')) {
@@ -432,6 +569,17 @@ export function useProjectStore() {
     moveSlide,
     addElement,
     updateElement,
+    undo,
+    redo,
+    canUndo: past.length > 0,
+    canRedo: future.length > 0,
+    saveSnapshot,
+    duplicateElement,
+    bringForward,
+    bringToFront,
+    sendBackward,
+    sendToBack,
+    toggleLockElement,
     deleteElement,
     setAspectRatio,
     resetToTemplate,
