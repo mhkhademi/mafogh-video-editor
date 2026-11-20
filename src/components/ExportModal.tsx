@@ -914,8 +914,20 @@ export const ExportModal: React.FC<ExportModalProps> = ({
             onClick={handleStartExport}
             className="px-5 py-2.5 bg-gradient-to-r from-pink-600 to-indigo-600 hover:from-pink-500 hover:to-indigo-500 disabled:opacity-50 text-white rounded-xl text-xs font-bold flex items-center gap-2 shadow-lg shadow-pink-600/25 transition-all transform active:scale-95 cursor-pointer"
           >
-            <Video size={16} />
-            <span>{isRendering ? 'در حال رندر استودیویی...' : 'شروع خروجی MP4 با FFmpeg'}</span>
+            {renderEngine === 'webcodecs' ? (
+              <Zap size={16} className={isRendering ? 'animate-bounce text-amber-300' : 'text-amber-300'} />
+            ) : (
+              <Video size={16} />
+            )}
+            <span>
+              {isRendering
+                ? renderEngine === 'webcodecs'
+                  ? 'در حال رندر توربو با کارت گرافیک...'
+                  : 'در حال رندر استودیویی با FFmpeg...'
+                : renderEngine === 'webcodecs'
+                ? 'شروع خروجی توربو MP4 با کارت گرافیک'
+                : 'شروع خروجی MP4 با FFmpeg'}
+            </span>
           </button>
         </div>
       </div>
