@@ -1,10 +1,31 @@
-export type AnimationType = 'slide-up' | 'fade-in' | 'pop-in' | 'slide-down' | 'zoom-in' | 'none';
+export type AnimationType =
+  | 'slide-up'
+  | 'fade-in'
+  | 'pop-in'
+  | 'slide-down'
+  | 'zoom-in'
+  | 'typewriter'
+  | 'counter'
+  | 'none';
+
+export type ExitAnimationType = 'fade-out' | 'slide-down' | 'slide-up' | 'zoom-out' | 'none';
 
 export interface AnimationConfig {
   type: AnimationType;
   duration: number; // in seconds, e.g. 0.8
   delay: number;    // start delay relative to slide start in seconds, e.g. 0.2
   easing?: string;  // css easing function
+
+  // Exit Animation & In/Out Timing
+  outTime?: number;       // second within slide when exit begins
+  exitType?: ExitAnimationType;
+  exitDuration?: number;  // duration of exit animation in seconds e.g. 0.5
+
+  // Counter options
+  counterStart?: number;
+  counterEnd?: number;
+  counterPrefix?: string;
+  counterSuffix?: string;
 }
 
 export type ElementType = 'title' | 'subtitle' | 'paragraph' | 'badge' | 'image' | 'card' | 'list-box';

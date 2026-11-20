@@ -1,14 +1,5 @@
 import { Project, Slide, SlideElement } from '../types';
-
-function easeOutCubic(x: number): number {
-  return 1 - Math.pow(1 - x, 3);
-}
-
-function easeOutBack(x: number): number {
-  const c1 = 1.70158;
-  const c3 = c1 + 1;
-  return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2);
-}
+import { calculateMotion } from './motionUtils';
 
 export function renderSlideToCanvas(
   ctx: CanvasRenderingContext2D,
@@ -51,59 +42,26 @@ export function renderSlideToCanvas(
     ctx.fillRect(0, 0, width, height);
   }
 
-  // 2. Slide Exit Fade calculation
-  const exitDuration = 0.5;
-  let exitOpacity = 1;
-  if (slideLocalTime > slide.duration - exitDuration) {
-    const exitProgress = (slideLocalTime - (slide.duration - exitDuration)) / exitDuration;
-    exitOpacity = Math.max(0, 1 - easeOutCubic(exitProgress));
-  }
-
-  // 3. Render each element
+  // 2. Render each element with unified motion engine
   for (const element of slide.elements) {
-    const anim = element.animation;
-    const start = anim.delay || 0;
-    const dur = anim.duration || 0.6;
+    const motion = calculateMotion(
+      element.content,
+      element.animation,
+      slideLocalTime,
+      slide.duration
+    );
 
-    let progress = 0;
-    if (slideLocalTime < start) {
-      continue; // Not yet visible
-    } else if (slideLocalTime >= start + dur) {
-      progress = 1;
-    } else {
-      progress = (slideLocalTime - start) / dur;
-    }
-
-    const eased = easeOutCubic(progress);
-    let elemOpacity = Math.min(1, progress * 1.5) * exitOpacity;
-    let offsetY = 0;
-    let scale = 1;
-
-    if (anim.type === 'slide-up') {
-      offsetY = (1 - eased) * 60; // moves up by 60px smoothly
-    } else if (anim.type === 'slide-down') {
-      offsetY = (1 - eased) * -60;
-    } else if (anim.type === 'pop-in') {
-      const backEased = easeOutBack(progress);
-      scale = 0.4 + backEased * 0.6;
-      elemOpacity = Math.min(1, progress * 2) * exitOpacity;
-    } else if (anim.type === 'zoom-in') {
-      scale = 0.8 + eased * 0.2;
-    } else if (anim.type === 'fade-in') {
-      elemOpacity = eased * exitOpacity;
-    } else if (anim.type === 'none') {
-      elemOpacity = exitOpacity;
-    }
+    if (!motion.isVisible) continue;
 
     ctx.save();
-    ctx.globalAlpha = Math.max(0, Math.min(1, elemOpacity));
+    ctx.globalAlpha = motion.opacity;
 
     const posX = (element.x / 100) * width;
-    const posY = (element.y / 100) * height + offsetY;
+    const posY = (element.y / 100) * height + motion.offsetY;
 
     ctx.translate(posX, posY);
-    if (scale !== 1) {
-      ctx.scale(Math.max(0, scale), Math.max(0, scale));
+    if (motion.scale !== 1) {
+      ctx.scale(Math.max(0, motion.scale), Math.max(0, motion.scale));
     }
 
     // Draw element content based on type
@@ -119,7 +77,7 @@ export function renderSlideToCanvas(
       // Multi-line word wrap if width is specified and wrapping is not disabled
       if (element.width && !element.nowrap) {
         const maxWidth = (element.width / 100) * width;
-        const words = element.content.split(' ');
+        const words = motion.displayText.split(' ');
         let line = '';
         const lines: string[] = [];
 
@@ -144,7 +102,7 @@ export function renderSlideToCanvas(
           startY += lineHeight;
         }
       } else {
-        ctx.fillText(element.content, 0, 0);
+        ctx.fillText(motion.displayText, 0, 0);
       }
     } else if (element.type === 'list-box') {
       // Draw branded dual-language list box
@@ -177,7 +135,7 @@ export function renderSlideToCanvas(
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.direction = 'rtl';
-      ctx.fillText(element.content, leftW + rightW / 2, boxH / 2);
+      ctx.fillText(motion.displayText, leftW + rightW / 2, boxH / 2);
 
       // Text inside left block (English)
       if (element.subcontent) {
@@ -201,7 +159,7 @@ export function renderSlideToCanvas(
       ctx.fillStyle = element.color || '#ffffff';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText(element.content, 0, 4);
+      ctx.fillText(motion.displayText, 0, 4);
     } else if (element.type === 'image') {
       // Draw image element with aspect-ratio preservation and rounded corners
       const img = imageCache?.get(element.content);

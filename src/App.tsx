@@ -254,6 +254,12 @@ export const App: React.FC = () => {
           }
         }}
         activeSlideId={activeSlideId}
+        activeSlide={activeSlide}
+        selectedElementId={selectedElementId}
+        onSelectElement={setSelectedElementId}
+        onUpdateElement={(elementId, partial) =>
+          updateElement(activeSlide.id, elementId, partial)
+        }
       />
 
       {/* MP4 Render & Export Modal */}

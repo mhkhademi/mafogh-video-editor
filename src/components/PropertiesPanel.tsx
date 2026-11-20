@@ -763,16 +763,62 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                       <option value="pop-in">پاپ و زوم ارتجاعی (Pop In / Scale)</option>
                       <option value="slide-down">حرکت از بالا به پایین (Slide Down)</option>
                       <option value="zoom-in">بزرگنمایی تدریجی (Zoom In)</option>
+                      <option value="typewriter">ماشین تحریر زنده (Typewriter)</option>
+                      <option value="counter">شمارنده متحرک اعداد (Animated Counter)</option>
                       <option value="none">بدون انیمیشن (ثابت)</option>
                     </select>
                   </div>
 
+                  {/* Counter configuration if counter animation is selected */}
+                  {selectedElement.animation.type === 'counter' && (
+                    <div className="p-3 bg-slate-950/60 rounded-lg border border-slate-800 space-y-2.5 text-xs">
+                      <div className="text-amber-400 font-bold flex items-center gap-1.5 text-[11px]">
+                        <span>تنظیمات شمارنده اعداد</span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="block text-[10px] text-slate-400 mb-1">عدد شروع</label>
+                          <input
+                            type="number"
+                            value={selectedElement.animation.counterStart ?? 0}
+                            onChange={(e) =>
+                              onUpdateElement(selectedElement.id, {
+                                animation: {
+                                  ...selectedElement.animation,
+                                  counterStart: Number(e.target.value),
+                                },
+                              })
+                            }
+                            className="w-full bg-slate-800 border border-slate-700 rounded px-2 py-1 text-xs text-white"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] text-slate-400 mb-1">عدد هدف (پایان)</label>
+                          <input
+                            type="number"
+                            placeholder="خودکار از متن"
+                            value={selectedElement.animation.counterEnd ?? ''}
+                            onChange={(e) =>
+                              onUpdateElement(selectedElement.id, {
+                                animation: {
+                                  ...selectedElement.animation,
+                                  counterEnd: e.target.value ? Number(e.target.value) : undefined,
+                                },
+                              })
+                            }
+                            className="w-full bg-slate-800 border border-slate-700 rounded px-2 py-1 text-xs text-white"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   <div className="space-y-3">
                     <RangeSlider
-                      label="تاخیر ورود به اسلاید"
+                      label="تاخیر ورود به اسلاید (زمان شروع)"
                       value={selectedElement.animation.delay}
                       min={0}
-                      max={10}
+                      max={Math.max(1, slide.duration - 0.5)}
                       step={0.1}
                       unit="s"
                       color="amber"
@@ -786,7 +832,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                       }
                     />
                     <RangeSlider
-                      label="مدت زمان اجرای انیمیشن"
+                      label="مدت زمان اجرای ورود"
                       value={selectedElement.animation.duration}
                       min={0.2}
                       max={3}
@@ -803,6 +849,79 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                       }
                     />
                   </div>
+                </div>
+
+                {/* ================= EXIT ANIMATION & OUT TIMING ================= */}
+                <div className="border-t border-slate-800 pt-4 space-y-3">
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-rose-400">
+                    <Sparkles size={14} />
+                    <span>تنظیمات خروج المان (Exit Animation)</span>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs text-slate-400 mb-1">نوع انیمیشن خروج</label>
+                    <select
+                      value={selectedElement.animation.exitType || 'none'}
+                      onChange={(e) =>
+                        onUpdateElement(selectedElement.id, {
+                          animation: {
+                            ...selectedElement.animation,
+                            exitType: e.target.value as any,
+                          },
+                        })
+                      }
+                      className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200 outline-none"
+                    >
+                      <option value="none">بدون خروج (تا پایان اسلاید بماند)</option>
+                      <option value="fade-out">محو شدن تدریجی (Fade Out)</option>
+                      <option value="slide-down">خروج به سمت پایین (Slide Down)</option>
+                      <option value="slide-up">خروج به سمت بالا (Slide Up)</option>
+                      <option value="zoom-out">کوچک‌نمایی و خروج (Zoom Out)</option>
+                    </select>
+                  </div>
+
+                  {selectedElement.animation.exitType && selectedElement.animation.exitType !== 'none' && (
+                    <div className="space-y-3">
+                      <RangeSlider
+                        label="زمان شروع خروج روی اسلاید"
+                        value={
+                          selectedElement.animation.outTime !== undefined
+                            ? selectedElement.animation.outTime
+                            : Math.max(0, slide.duration - (selectedElement.animation.exitDuration || 0.5))
+                        }
+                        min={Number(((selectedElement.animation.delay || 0) + 0.3).toFixed(1))}
+                        max={slide.duration}
+                        step={0.1}
+                        unit="s"
+                        color="pink"
+                        onChange={(val) =>
+                          onUpdateElement(selectedElement.id, {
+                            animation: {
+                              ...selectedElement.animation,
+                              outTime: val,
+                            },
+                          })
+                        }
+                      />
+                      <RangeSlider
+                        label="مدت زمان اجرای خروج"
+                        value={selectedElement.animation.exitDuration ?? 0.5}
+                        min={0.2}
+                        max={2}
+                        step={0.1}
+                        unit="s"
+                        color="rose"
+                        onChange={(val) =>
+                          onUpdateElement(selectedElement.id, {
+                            animation: {
+                              ...selectedElement.animation,
+                              exitDuration: val,
+                            },
+                          })
+                        }
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
             )}

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Lock } from 'lucide-react';
 import { SlideElement as ISlideElement } from '../types';
+import { calculateMotion } from '../utils/motionUtils';
 
 interface SlideElementProps {
   element: ISlideElement;
@@ -14,18 +15,6 @@ interface SlideElementProps {
   forceVisible?: boolean;
 }
 
-// Cubic bezier ease-out approximation: smooth decelerate
-function easeOutCubic(x: number): number {
-  return 1 - Math.pow(1 - x, 3);
-}
-
-// Spring-like pop easing
-function easeOutBack(x: number): number {
-  const c1 = 1.70158;
-  const c3 = c1 + 1;
-  return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2);
-}
-
 export const SlideElement: React.FC<SlideElementProps> = ({
   element,
   slideLocalTime,
@@ -37,96 +26,41 @@ export const SlideElement: React.FC<SlideElementProps> = ({
   isExporting = false,
   forceVisible = false,
 }) => {
-  const { animation } = element;
-  const animStart = animation.delay || 0;
-  const animDur = animation.duration || 0.6;
-  const animEnd = animStart + animDur;
-
-  // Calculate entrance progress [0, 1]
-  let progress = forceVisible ? 1 : 0;
-  if (!forceVisible) {
-    if (slideLocalTime < animStart) {
-      progress = 0;
-    } else if (slideLocalTime >= animEnd) {
-      progress = 1;
-    } else {
-      progress = (slideLocalTime - animStart) / animDur;
-    }
-  }
-
-  // Calculate slide exit fade if near the end of slide
-  const exitDuration = 0.5;
-  let exitOpacity = 1;
-  if (!forceVisible && slideLocalTime > slideDuration - exitDuration) {
-    const exitProgress = (slideLocalTime - (slideDuration - exitDuration)) / exitDuration;
-    exitOpacity = Math.max(0, 1 - easeOutCubic(exitProgress));
-  }
-
-  // Compute visual transform based on animation type
-  let opacity = 1;
-  let animTransform = '';
-
-  if (forceVisible) {
-    opacity = 1;
-    animTransform = '';
-  } else if (progress === 0) {
-    opacity = 0;
-  } else {
-    const eased = easeOutCubic(progress);
-    switch (animation.type) {
-      case 'slide-up': {
-        const translateY = (1 - eased) * 50; // starts 50px below
-        opacity = Math.min(1, progress * 1.5) * exitOpacity;
-        animTransform = `translateY(${translateY}px)`;
-        break;
-      }
-      case 'slide-down': {
-        const translateY = (1 - eased) * -50;
-        opacity = Math.min(1, progress * 1.5) * exitOpacity;
-        animTransform = `translateY(${translateY}px)`;
-        break;
-      }
-      case 'pop-in': {
-        const backEased = easeOutBack(progress);
-        const scale = 0.4 + backEased * 0.6;
-        opacity = Math.min(1, progress * 2) * exitOpacity;
-        animTransform = `scale(${Math.max(0, scale)})`;
-        break;
-      }
-      case 'zoom-in': {
-        const scale = 0.8 + eased * 0.2;
-        opacity = eased * exitOpacity;
-        animTransform = `scale(${scale})`;
-        break;
-      }
-      case 'fade-in':
-      default: {
-        opacity = eased * exitOpacity;
-        animTransform = '';
-        break;
-      }
-    }
-  }
+  const motion = calculateMotion(
+    element.content,
+    element.animation,
+    slideLocalTime,
+    slideDuration,
+    forceVisible
+  );
 
   // For images, width is an explicit percentage (defaults to 35%) so preview matches canvasRenderer exactly
   const elementWidth = element.type === 'image'
     ? (element.width ?? 35)
     : element.width;
 
+  const isTyping =
+    element.animation.type === 'typewriter' &&
+    slideLocalTime < (element.animation.delay || 0) + (element.animation.duration || 0.6) &&
+    !forceVisible;
+
   // Position based on percentage
   const style: React.CSSProperties = {
     position: 'absolute',
     left: `${element.x}%`,
     top: `${element.y}%`,
-    transform: animTransform ? `translate(-50%, -50%) ${animTransform}` : 'translate(-50%, -50%)',
+    transform: `translate(-50%, -50%) translateY(${motion.offsetY}px) scale(${motion.scale})`,
     width: elementWidth ? `${elementWidth}%` : 'max-content',
     maxWidth: elementWidth ? undefined : '92%',
-    opacity,
+    opacity: motion.opacity,
+    display: motion.isVisible || isSelected ? 'block' : 'none',
     transition: 'outline 0.15s ease',
   };
 
   // Render element content based on type
   const renderContent = () => {
+    const textToShow = motion.displayText;
+
     switch (element.type) {
       case 'title':
         return (
@@ -140,7 +74,8 @@ export const SlideElement: React.FC<SlideElementProps> = ({
             }}
             className={`w-full tracking-tight select-none ${element.nowrap ? 'whitespace-nowrap' : ''}`}
           >
-            {element.content}
+            {textToShow}
+            {isTyping && <span className="inline-block w-1.5 h-[0.8em] bg-current opacity-80 animate-pulse mr-1 align-baseline"></span>}
           </h1>
         );
 
@@ -156,7 +91,8 @@ export const SlideElement: React.FC<SlideElementProps> = ({
             }}
             className={`w-full tracking-normal select-none ${element.nowrap ? 'whitespace-nowrap' : ''}`}
           >
-            {element.content}
+            {textToShow}
+            {isTyping && <span className="inline-block w-1.5 h-[0.8em] bg-current opacity-80 animate-pulse mr-1 align-baseline"></span>}
           </p>
         );
 
@@ -172,7 +108,8 @@ export const SlideElement: React.FC<SlideElementProps> = ({
             }}
             className={`w-full leading-relaxed select-none ${element.nowrap ? 'whitespace-nowrap' : ''}`}
           >
-            {element.content}
+            {textToShow}
+            {isTyping && <span className="inline-block w-1.5 h-[0.8em] bg-current opacity-80 animate-pulse mr-1 align-baseline"></span>}
           </p>
         );
 
@@ -200,7 +137,7 @@ export const SlideElement: React.FC<SlideElementProps> = ({
                 fontSize: '28px',
               }}
             >
-              {element.content}
+              {textToShow}
             </div>
           </div>
         );
@@ -219,7 +156,7 @@ export const SlideElement: React.FC<SlideElementProps> = ({
               fontWeight: '900',
             }}
           >
-            {element.content}
+            {textToShow}
           </div>
         );
 
@@ -234,7 +171,7 @@ export const SlideElement: React.FC<SlideElementProps> = ({
         );
 
       default:
-        return <div>{element.content}</div>;
+        return <div>{textToShow}</div>;
     }
   };
 
