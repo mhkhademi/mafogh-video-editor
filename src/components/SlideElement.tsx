@@ -34,6 +34,7 @@ export const SlideElement: React.FC<SlideElementProps> = ({
   onSelect,
   onMouseDown,
   onResizeMouseDown,
+  isExporting = false,
   forceVisible = false,
 }) => {
   const { animation } = element;
