@@ -298,18 +298,18 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                   <span className="font-bold text-pink-300">کتابخانه آیکون‌های وکتور (Icon Library)</span>
                 </button>
                 <button
-                  onClick={() => onAddElement('shape')}
+                  onClick={() => onAddElement('arrow')}
                   className="p-2.5 bg-slate-800 hover:bg-slate-750 border border-slate-700 rounded-lg flex items-center gap-2 text-xs text-slate-200 transition-colors"
                 >
                   <ArrowRight size={16} className="text-rose-400" />
                   <span>فلش راهنما (Arrow)</span>
                 </button>
                 <button
-                  onClick={() => onAddElement('badge')}
+                  onClick={() => onAddElement('divider')}
                   className="p-2.5 bg-slate-800 hover:bg-slate-750 border border-slate-700 rounded-lg flex items-center gap-2 text-xs text-slate-200 transition-colors"
                 >
-                  <Square size={16} className="text-emerald-400" />
-                  <span>کادر هایلایت (Badge)</span>
+                  <Minus size={16} className="text-amber-400" />
+                  <span>خط جداکننده (Line)</span>
                 </button>
               </div>
             </div>
@@ -537,149 +537,99 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                       )}
                     </div>
                   </div>
-                ) : selectedElement.type === 'shape' || selectedElement.type === 'badge' ? (
-                  <div className="space-y-3.5 p-3.5 bg-slate-800/60 rounded-xl border border-slate-700/70">
+                ) : selectedElement.type === 'arrow' || (selectedElement.type === 'shape' && selectedElement.shapeKind !== 'divider') ? (
+                  <div className="space-y-4 p-3.5 bg-slate-800/60 rounded-xl border border-slate-700/70">
                     <div className="flex items-center justify-between pb-2 border-b border-slate-700/60">
-                      <span className="text-xs font-bold text-white">تنظیمات شکل و فلش</span>
-                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-pink-950 text-pink-300 border border-pink-700/50">
-                        {selectedElement.shapeKind || 'arrow-right'}
+                      <div className="flex items-center gap-2">
+                        <ArrowRight size={16} className="text-pink-400" />
+                        <span className="text-xs font-bold text-white">تنظیمات فلش اشاره‌گر</span>
+                      </div>
+                      <span className="text-[11px] font-mono text-pink-300 bg-pink-950/80 px-2 py-0.5 rounded border border-pink-700/40">
+                        {selectedElement.rotation || 0}°
                       </span>
                     </div>
 
-                    {/* Shape Kind Switcher */}
-                    <div>
-                      <label className="block text-xs font-semibold text-slate-400 mb-1.5">
-                        نوع شکل یا فلش
-                      </label>
-                      <div className="grid grid-cols-4 gap-1 bg-slate-900 p-1 rounded-lg border border-slate-750">
-                        <button
-                          onClick={() => onUpdateElement(selectedElement.id, { shapeKind: 'arrow-right' })}
-                          className={`py-1 text-xs rounded transition-colors flex items-center justify-center gap-1 ${
-                            (selectedElement.shapeKind || 'arrow-right').startsWith('arrow')
-                              ? 'bg-pink-700 text-white font-bold'
-                              : 'text-slate-400 hover:text-white'
-                          }`}
-                          title="فلش اشاره‌گر"
-                        >
-                          <ArrowRight size={13} />
-                          <span>فلش</span>
-                        </button>
-                        <button
-                          onClick={() => onUpdateElement(selectedElement.id, { shapeKind: 'rectangle' })}
-                          className={`py-1 text-xs rounded transition-colors flex items-center justify-center gap-1 ${
-                            selectedElement.shapeKind === 'rectangle'
-                              ? 'bg-pink-700 text-white font-bold'
-                              : 'text-slate-400 hover:text-white'
-                          }`}
-                          title="کادر و برچسب"
-                        >
-                          <Square size={13} />
-                          <span>کادر</span>
-                        </button>
-                        <button
-                          onClick={() => onUpdateElement(selectedElement.id, { shapeKind: 'circle' })}
-                          className={`py-1 text-xs rounded transition-colors flex items-center justify-center gap-1 ${
-                            selectedElement.shapeKind === 'circle'
-                              ? 'bg-pink-700 text-white font-bold'
-                              : 'text-slate-400 hover:text-white'
-                          }`}
-                          title="نشانگر دایره"
-                        >
-                          <Circle size={13} />
-                          <span>دایره</span>
-                        </button>
-                        <button
-                          onClick={() => onUpdateElement(selectedElement.id, { shapeKind: 'divider' })}
-                          className={`py-1 text-xs rounded transition-colors flex items-center justify-center gap-1 ${
-                            selectedElement.shapeKind === 'divider'
-                              ? 'bg-pink-700 text-white font-bold'
-                              : 'text-slate-400 hover:text-white'
-                          }`}
-                          title="خط جداکننده"
-                        >
-                          <Minus size={13} />
-                          <span>خط</span>
-                        </button>
+                    {/* Manual Angle Input & Smooth Slider (0° - 360°) */}
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs font-semibold text-slate-300">
+                          زاویه و چرخش فلش (درجه)
+                        </label>
+                        <div className="flex items-center gap-1">
+                          <input
+                            type="number"
+                            min={0}
+                            max={360}
+                            value={selectedElement.rotation || 0}
+                            onChange={(e) => {
+                              let val = Number(e.target.value) || 0;
+                              if (val < 0) val = (val % 360) + 360;
+                              val = val % 361;
+                              onUpdateElement(selectedElement.id, { rotation: val });
+                            }}
+                            className="w-16 px-2 py-1 bg-slate-900 border border-slate-700 rounded-md text-xs font-mono text-center text-pink-300 focus:outline-none focus:border-pink-500"
+                          />
+                          <span className="text-xs text-slate-400">°</span>
+                        </div>
+                      </div>
+
+                      <input
+                        type="range"
+                        min={0}
+                        max={360}
+                        step={1}
+                        value={selectedElement.rotation || 0}
+                        onChange={(e) =>
+                          onUpdateElement(selectedElement.id, { rotation: Number(e.target.value) })
+                        }
+                        className="w-full accent-pink-600 h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer"
+                      />
+
+                      {/* Quick Angle Presets */}
+                      <div className="grid grid-cols-5 gap-1 pt-1">
+                        {[
+                          { label: 'راست (۰°)', deg: 0 },
+                          { label: 'پایین (۹۰°)', deg: 90 },
+                          { label: 'چپ (۱۸۰°)', deg: 180 },
+                          { label: 'بالا (۲۷۰°)', deg: 270 },
+                          { label: 'مایل (۴۵°)', deg: 45 },
+                        ].map((preset) => (
+                          <button
+                            key={preset.deg}
+                            onClick={() => onUpdateElement(selectedElement.id, { rotation: preset.deg })}
+                            className={`py-1 text-[10px] rounded transition-colors ${
+                              (selectedElement.rotation || 0) === preset.deg
+                                ? 'bg-pink-700 text-white font-bold'
+                                : 'bg-slate-900/80 text-slate-400 hover:text-white'
+                            }`}
+                          >
+                            {preset.label}
+                          </button>
+                        ))}
                       </div>
                     </div>
 
-                    {/* Arrow direction & rotation if arrow */}
-                    {(selectedElement.shapeKind?.startsWith('arrow') || !selectedElement.shapeKind) && (
-                      <div className="space-y-3">
-                        <div>
-                          <label className="block text-xs font-semibold text-slate-400 mb-1.5">
-                            جهت اولیه فلش
-                          </label>
-                          <div className="grid grid-cols-4 gap-1 bg-slate-900 p-1 rounded-lg border border-slate-750">
-                            {[
-                              { label: 'راست', kind: 'arrow-right' as const },
-                              { label: 'چپ', kind: 'arrow-left' as const },
-                              { label: 'بالا', kind: 'arrow-up' as const },
-                              { label: 'پایین', kind: 'arrow-down' as const },
-                            ].map((dir) => (
-                              <button
-                                key={dir.kind}
-                                onClick={() => onUpdateElement(selectedElement.id, { shapeKind: dir.kind })}
-                                className={`py-1 text-xs rounded transition-colors ${
-                                  selectedElement.shapeKind === dir.kind
-                                    ? 'bg-pink-700 text-white font-bold'
-                                    : 'text-slate-400 hover:text-white'
-                                }`}
-                              >
-                                {dir.label}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-
-                        {/* Rotation selector */}
-                        <div>
-                          <div className="flex justify-between text-xs text-slate-400 mb-1">
-                            <span>زاویه چرخش</span>
-                            <span className="font-mono text-pink-400">{selectedElement.rotation || 0}°</span>
-                          </div>
-                          <div className="grid grid-cols-5 gap-1 bg-slate-900 p-1 rounded-lg border border-slate-750">
-                            {[0, 45, 90, 180, 270].map((deg) => (
-                              <button
-                                key={deg}
-                                onClick={() => onUpdateElement(selectedElement.id, { rotation: deg })}
-                                className={`py-1 text-xs rounded transition-colors ${
-                                  (selectedElement.rotation || 0) === deg
-                                    ? 'bg-pink-700 text-white font-bold'
-                                    : 'text-slate-400 hover:text-white'
-                                }`}
-                              >
-                                {deg}°
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Text / Label inside shape (for rectangle / circle) */}
-                    {(selectedElement.shapeKind === 'rectangle' || selectedElement.shapeKind === 'circle') && (
-                      <div>
-                        <label className="block text-xs font-semibold text-slate-400 mb-1">
-                          متن یا شماره داخل شکل
-                        </label>
-                        <input
-                          type="text"
-                          value={selectedElement.content || ''}
-                          onChange={(e) => onUpdateElement(selectedElement.id, { content: e.target.value })}
-                          placeholder="مثلاً: نکته طلایی، ۱، جدید..."
-                          className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-pink-500"
-                        />
-                      </div>
-                    )}
-
-                    {/* Stroke / Line Thickness */}
+                    {/* Arrow Length */}
                     <div>
                       <RangeSlider
-                        label="ضخامت خط یا حاشیه"
-                        value={selectedElement.strokeWidth || 4}
-                        min={1}
-                        max={16}
+                        label="طول فلش"
+                        value={selectedElement.width || 25}
+                        min={10}
+                        max={80}
+                        step={1}
+                        unit="%"
+                        color="pink"
+                        onChange={(val) => onUpdateElement(selectedElement.id, { width: Math.round(val) })}
+                      />
+                    </div>
+
+                    {/* Arrow Thickness */}
+                    <div>
+                      <RangeSlider
+                        label="ضخامت فلش"
+                        value={selectedElement.strokeWidth || 5}
+                        min={2}
+                        max={20}
                         step={1}
                         unit="px"
                         color="pink"
@@ -687,45 +637,91 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                       />
                     </div>
 
-                    {/* Width / Length */}
-                    {selectedElement.shapeKind !== 'circle' && (
-                      <div>
-                        <RangeSlider
-                          label="طول یا عرض شکل"
-                          value={selectedElement.width || 25}
-                          min={5}
-                          max={95}
-                          step={1}
-                          unit="%"
-                          color="indigo"
-                          onChange={(val) => onUpdateElement(selectedElement.id, { width: Math.round(val) })}
-                        />
-                      </div>
-                    )}
-
-                    {/* Primary Color */}
+                    {/* Arrow Color */}
                     <div>
                       <label className="block text-xs font-semibold text-slate-400 mb-1">
-                        رنگ اصلی (فلش / حاشیه / متن)
+                        رنگ فلش
                       </label>
                       <ColorPicker
                         color={selectedElement.color || '#6b0b45'}
                         onChange={(hex) => onUpdateElement(selectedElement.id, { color: hex })}
                       />
                     </div>
+                  </div>
+                ) : selectedElement.type === 'divider' || (selectedElement.type === 'shape' && selectedElement.shapeKind === 'divider') ? (
+                  <div className="space-y-4 p-3.5 bg-slate-800/60 rounded-xl border border-slate-700/70">
+                    <div className="flex items-center gap-2 pb-2 border-b border-slate-700/60">
+                      <Minus size={16} className="text-amber-400" />
+                      <span className="text-xs font-bold text-white">تنظیمات خط جداکننده</span>
+                    </div>
 
-                    {/* Background Color for rectangle / circle */}
-                    {(selectedElement.shapeKind === 'rectangle' || selectedElement.shapeKind === 'circle') && (
-                      <div>
-                        <label className="block text-xs font-semibold text-slate-400 mb-1">
-                          رنگ پس‌زمینه شکل
-                        </label>
-                        <ColorPicker
-                          color={selectedElement.backgroundColor || '#6b0b45'}
-                          onChange={(hex) => onUpdateElement(selectedElement.id, { backgroundColor: hex })}
-                        />
+                    {/* Divider Width */}
+                    <div>
+                      <RangeSlider
+                        label="عرض خط"
+                        value={selectedElement.width || 60}
+                        min={10}
+                        max={95}
+                        step={1}
+                        unit="%"
+                        color="indigo"
+                        onChange={(val) => onUpdateElement(selectedElement.id, { width: Math.round(val) })}
+                      />
+                    </div>
+
+                    {/* Divider Thickness */}
+                    <div>
+                      <RangeSlider
+                        label="ضخامت خط"
+                        value={selectedElement.strokeWidth || 3}
+                        min={1}
+                        max={16}
+                        step={1}
+                        unit="px"
+                        color="indigo"
+                        onChange={(val) => onUpdateElement(selectedElement.id, { strokeWidth: Math.round(val) })}
+                      />
+                    </div>
+
+                    {/* Divider Style (Gradient vs Solid) */}
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-400 mb-1.5">
+                        نوع رنگ خط
+                      </label>
+                      <div className="grid grid-cols-2 gap-1.5 bg-slate-900 p-1 rounded-lg border border-slate-750">
+                        <button
+                          onClick={() => onUpdateElement(selectedElement.id, { backgroundColor: 'gradient' })}
+                          className={`py-1 text-xs rounded transition-colors ${
+                            selectedElement.backgroundColor !== 'solid'
+                              ? 'bg-indigo-600 text-white font-bold'
+                              : 'text-slate-400 hover:text-white'
+                          }`}
+                        >
+                          گرادیانت محوشونده
+                        </button>
+                        <button
+                          onClick={() => onUpdateElement(selectedElement.id, { backgroundColor: 'solid' })}
+                          className={`py-1 text-xs rounded transition-colors ${
+                            selectedElement.backgroundColor === 'solid'
+                              ? 'bg-indigo-600 text-white font-bold'
+                              : 'text-slate-400 hover:text-white'
+                          }`}
+                        >
+                          یکدست (ساده)
+                        </button>
                       </div>
-                    )}
+                    </div>
+
+                    {/* Divider Color */}
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-400 mb-1">
+                        رنگ خط
+                      </label>
+                      <ColorPicker
+                        color={selectedElement.color || '#6b0b45'}
+                        onChange={(hex) => onUpdateElement(selectedElement.id, { color: hex })}
+                      />
+                    </div>
                   </div>
                 ) : selectedElement.type === 'image' ? (
                   <div className="space-y-2">
@@ -801,6 +797,8 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                 {/* Typography, Colors & Text Alignment - ONLY FOR TEXT/CARD ELEMENTS */}
                 {selectedElement.type !== 'image' &&
                   selectedElement.type !== 'icon' &&
+                  selectedElement.type !== 'arrow' &&
+                  selectedElement.type !== 'divider' &&
                   selectedElement.type !== 'shape' &&
                   selectedElement.type !== 'badge' && (
                   <>

@@ -28,7 +28,7 @@ export interface AnimationConfig {
   counterSuffix?: string;
 }
 
-export type ElementType = 'title' | 'subtitle' | 'paragraph' | 'badge' | 'image' | 'card' | 'list-box' | 'icon' | 'shape';
+export type ElementType = 'title' | 'subtitle' | 'paragraph' | 'image' | 'card' | 'list-box' | 'icon' | 'arrow' | 'divider' | 'shape' | 'badge';
 
 export type ShapeKind = 'arrow-right' | 'arrow-left' | 'arrow-up' | 'arrow-down' | 'rectangle' | 'circle' | 'divider';
 
