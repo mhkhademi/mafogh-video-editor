@@ -205,7 +205,10 @@ export const SlideElement: React.FC<SlideElementProps> = ({
         const headH = Math.max(strokeWidth * 3, 20);
 
         return (
-          <div className="w-full h-8 flex items-center pointer-events-none select-none">
+          <div
+            className="w-full h-8 flex items-center pointer-events-none select-none"
+            dir="ltr"
+          >
             {/* Arrow Shaft: stretches to fill remaining width */}
             <div
               className="flex items-center"
@@ -285,7 +288,10 @@ export const SlideElement: React.FC<SlideElementProps> = ({
         const headW = Math.max(strokeWidth * 3.5, 22);
         const headH = Math.max(strokeWidth * 3, 20);
         return (
-          <div className="w-full h-8 flex items-center pointer-events-none select-none">
+          <div
+            className="w-full h-8 flex items-center pointer-events-none select-none"
+            dir="ltr"
+          >
             <div
               className="flex items-center"
               style={{
