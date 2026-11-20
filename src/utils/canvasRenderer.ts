@@ -211,6 +211,134 @@ export function renderSlideToCanvas(
         ctx.drawImage(iconImg, -size / 2, -size / 2, size, size);
       }
       ctx.restore();
+    } else if (element.type === 'shape' || element.type === 'badge') {
+      const kind = element.shapeKind || 'arrow-right';
+      const color = element.color || '#6b0b45';
+      const strokeWidth = element.strokeWidth || 4;
+
+      ctx.save();
+      if (element.rotation) {
+        ctx.rotate((element.rotation * Math.PI) / 180);
+      }
+
+      if (kind === 'arrow-right' || kind === 'arrow-left') {
+        const arrowW = ((element.width || 22) / 100) * width;
+        const isLeft = kind === 'arrow-left';
+        const startX = isLeft ? arrowW / 2 : -arrowW / 2;
+        const endX = isLeft ? -arrowW / 2 : arrowW / 2;
+        const headLen = strokeWidth * 3.5;
+
+        ctx.strokeStyle = color;
+        ctx.fillStyle = color;
+        ctx.lineWidth = strokeWidth;
+        ctx.lineCap = 'round';
+
+        ctx.beginPath();
+        ctx.moveTo(startX, 0);
+        ctx.lineTo(isLeft ? endX + headLen * 0.7 : endX - headLen * 0.7, 0);
+        ctx.stroke();
+
+        ctx.beginPath();
+        if (isLeft) {
+          ctx.moveTo(endX, 0);
+          ctx.lineTo(endX + headLen, -headLen * 0.6);
+          ctx.lineTo(endX + headLen, headLen * 0.6);
+        } else {
+          ctx.moveTo(endX, 0);
+          ctx.lineTo(endX - headLen, -headLen * 0.6);
+          ctx.lineTo(endX - headLen, headLen * 0.6);
+        }
+        ctx.closePath();
+        ctx.fill();
+      } else if (kind === 'arrow-up' || kind === 'arrow-down') {
+        const arrowH = element.height || 140;
+        const isUp = kind === 'arrow-up';
+        const startY = isUp ? arrowH / 2 : -arrowH / 2;
+        const endY = isUp ? -arrowH / 2 : arrowH / 2;
+        const headLen = strokeWidth * 3.5;
+
+        ctx.strokeStyle = color;
+        ctx.fillStyle = color;
+        ctx.lineWidth = strokeWidth;
+        ctx.lineCap = 'round';
+
+        ctx.beginPath();
+        ctx.moveTo(0, startY);
+        ctx.lineTo(0, isUp ? endY + headLen * 0.7 : endY - headLen * 0.7);
+        ctx.stroke();
+
+        ctx.beginPath();
+        if (isUp) {
+          ctx.moveTo(0, endY);
+          ctx.lineTo(-headLen * 0.6, endY + headLen);
+          ctx.lineTo(headLen * 0.6, endY + headLen);
+        } else {
+          ctx.moveTo(0, endY);
+          ctx.lineTo(-headLen * 0.6, endY - headLen);
+          ctx.lineTo(headLen * 0.6, endY - headLen);
+        }
+        ctx.closePath();
+        ctx.fill();
+      } else if (kind === 'divider') {
+        const divW = ((element.width || 50) / 100) * width;
+        ctx.lineWidth = strokeWidth;
+        ctx.lineCap = 'round';
+        const grad = ctx.createLinearGradient(-divW / 2, 0, divW / 2, 0);
+        grad.addColorStop(0, 'transparent');
+        grad.addColorStop(0.5, color);
+        grad.addColorStop(1, 'transparent');
+        ctx.strokeStyle = grad;
+
+        ctx.beginPath();
+        ctx.moveTo(-divW / 2, 0);
+        ctx.lineTo(divW / 2, 0);
+        ctx.stroke();
+      } else if (kind === 'circle') {
+        const size = element.height || element.fontSize || 80;
+        ctx.fillStyle = element.backgroundColor || '#6b0b45';
+        ctx.beginPath();
+        ctx.arc(0, 0, size / 2, 0, Math.PI * 2);
+        ctx.fill();
+
+        if (element.borderColor) {
+          ctx.strokeStyle = element.borderColor;
+          ctx.lineWidth = strokeWidth;
+          ctx.stroke();
+        }
+
+        if (element.content) {
+          ctx.font = `bold ${element.fontSize || 24}px 'Vazirmatn', sans-serif`;
+          ctx.fillStyle = element.color || '#ffffff';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(motion.displayText || element.content, 0, 2);
+        }
+      } else {
+        // Rectangle / Highlight Badge
+        const rectW = ((element.width || 25) / 100) * width;
+        const rectH = element.height || 54;
+        const rad = element.borderRadius ?? 16;
+
+        ctx.fillStyle = element.backgroundColor || '#6b0b45';
+        ctx.beginPath();
+        ctx.roundRect(-rectW / 2, -rectH / 2, rectW, rectH, rad);
+        ctx.fill();
+
+        if (element.borderColor) {
+          ctx.strokeStyle = element.borderColor;
+          ctx.lineWidth = strokeWidth;
+          ctx.stroke();
+        }
+
+        if (element.content) {
+          ctx.font = `bold ${element.fontSize || 22}px 'Vazirmatn', sans-serif`;
+          ctx.fillStyle = element.color || '#ffffff';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(motion.displayText || element.content, 0, 2);
+        }
+      }
+      ctx.restore();
     }
 
     ctx.restore();

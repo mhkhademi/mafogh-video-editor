@@ -32,6 +32,10 @@ import {
   ArrowDown,
   ArrowUpToLine,
   ArrowDownToLine,
+  ArrowRight,
+  Minus,
+  Square,
+  Circle,
 } from 'lucide-react';
 import { getLucideIcon } from '../utils/iconRegistry';
 
@@ -293,6 +297,20 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                   <Sparkles size={16} className="text-pink-400 animate-pulse" />
                   <span className="font-bold text-pink-300">کتابخانه آیکون‌های وکتور (Icon Library)</span>
                 </button>
+                <button
+                  onClick={() => onAddElement('shape')}
+                  className="p-2.5 bg-slate-800 hover:bg-slate-750 border border-slate-700 rounded-lg flex items-center gap-2 text-xs text-slate-200 transition-colors"
+                >
+                  <ArrowRight size={16} className="text-rose-400" />
+                  <span>فلش راهنما (Arrow)</span>
+                </button>
+                <button
+                  onClick={() => onAddElement('badge')}
+                  className="p-2.5 bg-slate-800 hover:bg-slate-750 border border-slate-700 rounded-lg flex items-center gap-2 text-xs text-slate-200 transition-colors"
+                >
+                  <Square size={16} className="text-emerald-400" />
+                  <span>کادر هایلایت (Badge)</span>
+                </button>
               </div>
             </div>
           </div>
@@ -519,6 +537,196 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                       )}
                     </div>
                   </div>
+                ) : selectedElement.type === 'shape' || selectedElement.type === 'badge' ? (
+                  <div className="space-y-3.5 p-3.5 bg-slate-800/60 rounded-xl border border-slate-700/70">
+                    <div className="flex items-center justify-between pb-2 border-b border-slate-700/60">
+                      <span className="text-xs font-bold text-white">تنظیمات شکل و فلش</span>
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-pink-950 text-pink-300 border border-pink-700/50">
+                        {selectedElement.shapeKind || 'arrow-right'}
+                      </span>
+                    </div>
+
+                    {/* Shape Kind Switcher */}
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-400 mb-1.5">
+                        نوع شکل یا فلش
+                      </label>
+                      <div className="grid grid-cols-4 gap-1 bg-slate-900 p-1 rounded-lg border border-slate-750">
+                        <button
+                          onClick={() => onUpdateElement(selectedElement.id, { shapeKind: 'arrow-right' })}
+                          className={`py-1 text-xs rounded transition-colors flex items-center justify-center gap-1 ${
+                            (selectedElement.shapeKind || 'arrow-right').startsWith('arrow')
+                              ? 'bg-pink-700 text-white font-bold'
+                              : 'text-slate-400 hover:text-white'
+                          }`}
+                          title="فلش اشاره‌گر"
+                        >
+                          <ArrowRight size={13} />
+                          <span>فلش</span>
+                        </button>
+                        <button
+                          onClick={() => onUpdateElement(selectedElement.id, { shapeKind: 'rectangle' })}
+                          className={`py-1 text-xs rounded transition-colors flex items-center justify-center gap-1 ${
+                            selectedElement.shapeKind === 'rectangle'
+                              ? 'bg-pink-700 text-white font-bold'
+                              : 'text-slate-400 hover:text-white'
+                          }`}
+                          title="کادر و برچسب"
+                        >
+                          <Square size={13} />
+                          <span>کادر</span>
+                        </button>
+                        <button
+                          onClick={() => onUpdateElement(selectedElement.id, { shapeKind: 'circle' })}
+                          className={`py-1 text-xs rounded transition-colors flex items-center justify-center gap-1 ${
+                            selectedElement.shapeKind === 'circle'
+                              ? 'bg-pink-700 text-white font-bold'
+                              : 'text-slate-400 hover:text-white'
+                          }`}
+                          title="نشانگر دایره"
+                        >
+                          <Circle size={13} />
+                          <span>دایره</span>
+                        </button>
+                        <button
+                          onClick={() => onUpdateElement(selectedElement.id, { shapeKind: 'divider' })}
+                          className={`py-1 text-xs rounded transition-colors flex items-center justify-center gap-1 ${
+                            selectedElement.shapeKind === 'divider'
+                              ? 'bg-pink-700 text-white font-bold'
+                              : 'text-slate-400 hover:text-white'
+                          }`}
+                          title="خط جداکننده"
+                        >
+                          <Minus size={13} />
+                          <span>خط</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Arrow direction & rotation if arrow */}
+                    {(selectedElement.shapeKind?.startsWith('arrow') || !selectedElement.shapeKind) && (
+                      <div className="space-y-3">
+                        <div>
+                          <label className="block text-xs font-semibold text-slate-400 mb-1.5">
+                            جهت اولیه فلش
+                          </label>
+                          <div className="grid grid-cols-4 gap-1 bg-slate-900 p-1 rounded-lg border border-slate-750">
+                            {[
+                              { label: 'راست', kind: 'arrow-right' as const },
+                              { label: 'چپ', kind: 'arrow-left' as const },
+                              { label: 'بالا', kind: 'arrow-up' as const },
+                              { label: 'پایین', kind: 'arrow-down' as const },
+                            ].map((dir) => (
+                              <button
+                                key={dir.kind}
+                                onClick={() => onUpdateElement(selectedElement.id, { shapeKind: dir.kind })}
+                                className={`py-1 text-xs rounded transition-colors ${
+                                  selectedElement.shapeKind === dir.kind
+                                    ? 'bg-pink-700 text-white font-bold'
+                                    : 'text-slate-400 hover:text-white'
+                                }`}
+                              >
+                                {dir.label}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Rotation selector */}
+                        <div>
+                          <div className="flex justify-between text-xs text-slate-400 mb-1">
+                            <span>زاویه چرخش</span>
+                            <span className="font-mono text-pink-400">{selectedElement.rotation || 0}°</span>
+                          </div>
+                          <div className="grid grid-cols-5 gap-1 bg-slate-900 p-1 rounded-lg border border-slate-750">
+                            {[0, 45, 90, 180, 270].map((deg) => (
+                              <button
+                                key={deg}
+                                onClick={() => onUpdateElement(selectedElement.id, { rotation: deg })}
+                                className={`py-1 text-xs rounded transition-colors ${
+                                  (selectedElement.rotation || 0) === deg
+                                    ? 'bg-pink-700 text-white font-bold'
+                                    : 'text-slate-400 hover:text-white'
+                                }`}
+                              >
+                                {deg}°
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Text / Label inside shape (for rectangle / circle) */}
+                    {(selectedElement.shapeKind === 'rectangle' || selectedElement.shapeKind === 'circle') && (
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-400 mb-1">
+                          متن یا شماره داخل شکل
+                        </label>
+                        <input
+                          type="text"
+                          value={selectedElement.content || ''}
+                          onChange={(e) => onUpdateElement(selectedElement.id, { content: e.target.value })}
+                          placeholder="مثلاً: نکته طلایی، ۱، جدید..."
+                          className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-pink-500"
+                        />
+                      </div>
+                    )}
+
+                    {/* Stroke / Line Thickness */}
+                    <div>
+                      <RangeSlider
+                        label="ضخامت خط یا حاشیه"
+                        value={selectedElement.strokeWidth || 4}
+                        min={1}
+                        max={16}
+                        step={1}
+                        unit="px"
+                        color="pink"
+                        onChange={(val) => onUpdateElement(selectedElement.id, { strokeWidth: Math.round(val) })}
+                      />
+                    </div>
+
+                    {/* Width / Length */}
+                    {selectedElement.shapeKind !== 'circle' && (
+                      <div>
+                        <RangeSlider
+                          label="طول یا عرض شکل"
+                          value={selectedElement.width || 25}
+                          min={5}
+                          max={95}
+                          step={1}
+                          unit="%"
+                          color="indigo"
+                          onChange={(val) => onUpdateElement(selectedElement.id, { width: Math.round(val) })}
+                        />
+                      </div>
+                    )}
+
+                    {/* Primary Color */}
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-400 mb-1">
+                        رنگ اصلی (فلش / حاشیه / متن)
+                      </label>
+                      <ColorPicker
+                        color={selectedElement.color || '#6b0b45'}
+                        onChange={(hex) => onUpdateElement(selectedElement.id, { color: hex })}
+                      />
+                    </div>
+
+                    {/* Background Color for rectangle / circle */}
+                    {(selectedElement.shapeKind === 'rectangle' || selectedElement.shapeKind === 'circle') && (
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-400 mb-1">
+                          رنگ پس‌زمینه شکل
+                        </label>
+                        <ColorPicker
+                          color={selectedElement.backgroundColor || '#6b0b45'}
+                          onChange={(hex) => onUpdateElement(selectedElement.id, { backgroundColor: hex })}
+                        />
+                      </div>
+                    )}
+                  </div>
                 ) : selectedElement.type === 'image' ? (
                   <div className="space-y-2">
                     <label className="block text-xs font-semibold text-slate-400">
@@ -591,7 +799,10 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                 )}
 
                 {/* Typography, Colors & Text Alignment - ONLY FOR TEXT/CARD ELEMENTS */}
-                {selectedElement.type !== 'image' && selectedElement.type !== 'icon' && (
+                {selectedElement.type !== 'image' &&
+                  selectedElement.type !== 'icon' &&
+                  selectedElement.type !== 'shape' &&
+                  selectedElement.type !== 'badge' && (
                   <>
                     {/* Typography & Colors */}
                     <div className="space-y-3">

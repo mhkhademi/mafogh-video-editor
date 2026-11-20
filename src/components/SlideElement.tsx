@@ -50,7 +50,7 @@ export const SlideElement: React.FC<SlideElementProps> = ({
     position: 'absolute',
     left: `${element.x}%`,
     top: `${element.y}%`,
-    transform: `translate(-50%, -50%) translateY(${motion.offsetY}px) scale(${motion.scale})`,
+    transform: `translate(-50%, -50%) translateY(${motion.offsetY}px) scale(${motion.scale}) rotate(${element.rotation || 0}deg)`,
     width: elementWidth ? `${elementWidth}%` : 'max-content',
     maxWidth: elementWidth ? undefined : '92%',
     opacity: motion.opacity,
@@ -194,6 +194,146 @@ export const SlideElement: React.FC<SlideElementProps> = ({
               color={element.color || '#6b0b45'}
               strokeWidth={strokeWidth}
             />
+          </div>
+        );
+      }
+
+      case 'shape':
+      case 'badge': {
+        const kind = element.shapeKind || 'arrow-right';
+        const color = element.color || '#6b0b45';
+        const strokeWidth = element.strokeWidth || 4;
+
+        if (kind === 'arrow-right' || kind === 'arrow-left') {
+          const isLeft = kind === 'arrow-left';
+          return (
+            <div className="w-full flex items-center justify-center pointer-events-none py-1">
+              <svg
+                className="w-full h-10 overflow-visible"
+                viewBox="0 0 200 40"
+                fill="none"
+              >
+                <defs>
+                  <marker
+                    id={`arrowhead-${element.id}`}
+                    markerWidth="8"
+                    markerHeight="8"
+                    refX={isLeft ? 1 : 7}
+                    refY="4"
+                    orient="auto"
+                  >
+                    <path
+                      d={isLeft ? "M 8 0 L 0 4 L 8 8 z" : "M 0 0 L 8 4 L 0 8 z"}
+                      fill={color}
+                    />
+                  </marker>
+                </defs>
+                <line
+                  x1={isLeft ? 190 : 10}
+                  y1="20"
+                  x2={isLeft ? 10 : 190}
+                  y2="20"
+                  stroke={color}
+                  strokeWidth={strokeWidth}
+                  strokeLinecap="round"
+                  markerEnd={`url(#arrowhead-${element.id})`}
+                />
+              </svg>
+            </div>
+          );
+        }
+
+        if (kind === 'arrow-up' || kind === 'arrow-down') {
+          const isUp = kind === 'arrow-up';
+          return (
+            <div className="w-full flex items-center justify-center pointer-events-none px-1">
+              <svg
+                className="w-10 h-32 overflow-visible"
+                viewBox="0 0 40 160"
+                fill="none"
+              >
+                <defs>
+                  <marker
+                    id={`arrowhead-v-${element.id}`}
+                    markerWidth="8"
+                    markerHeight="8"
+                    refX="4"
+                    refY={isUp ? 1 : 7}
+                    orient="auto"
+                  >
+                    <path
+                      d={isUp ? "M 0 8 L 4 0 L 8 8 z" : "M 0 0 L 4 8 L 8 0 z"}
+                      fill={color}
+                    />
+                  </marker>
+                </defs>
+                <line
+                  x1="20"
+                  y1={isUp ? 150 : 10}
+                  x2="20"
+                  y2={isUp ? 10 : 150}
+                  stroke={color}
+                  strokeWidth={strokeWidth}
+                  strokeLinecap="round"
+                  markerEnd={`url(#arrowhead-v-${element.id})`}
+                />
+              </svg>
+            </div>
+          );
+        }
+
+        if (kind === 'divider') {
+          return (
+            <div className="w-full flex items-center justify-center py-2">
+              <div
+                className="w-full rounded-full transition-all"
+                style={{
+                  height: `${strokeWidth}px`,
+                  background:
+                    element.backgroundColor ||
+                    `linear-gradient(90deg, transparent, ${color}, transparent)`,
+                }}
+              />
+            </div>
+          );
+        }
+
+        if (kind === 'circle') {
+          const size = element.height || element.fontSize || 80;
+          return (
+            <div
+              className="flex items-center justify-center transition-all select-none font-bold"
+              style={{
+                width: `${size}px`,
+                height: `${size}px`,
+                borderRadius: '999px',
+                backgroundColor: element.backgroundColor || '#6b0b45',
+                color: element.color || '#ffffff',
+                border: element.borderColor ? `${strokeWidth}px solid ${element.borderColor}` : undefined,
+                fontSize: `${element.fontSize || 24}px`,
+                boxShadow: '0 8px 20px -4px rgba(0, 0, 0, 0.15)',
+              }}
+            >
+              {motion.displayText || element.content}
+            </div>
+          );
+        }
+
+        // Default: Rectangle / Highlight Badge
+        return (
+          <div
+            className="flex items-center justify-center px-6 py-2.5 transition-all select-none font-bold shadow-md"
+            style={{
+              width: element.width ? `${element.width}%` : 'max-content',
+              minHeight: element.height ? `${element.height}px` : '44px',
+              backgroundColor: element.backgroundColor || '#6b0b45',
+              color: element.color || '#ffffff',
+              borderRadius: `${element.borderRadius ?? 16}px`,
+              border: element.borderColor ? `${strokeWidth}px solid ${element.borderColor}` : undefined,
+              fontSize: `${element.fontSize || 22}px`,
+            }}
+          >
+            {motion.displayText || element.content}
           </div>
         );
       }

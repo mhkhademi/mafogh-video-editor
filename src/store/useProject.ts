@@ -354,6 +354,42 @@ export function useProjectStore() {
           animation: { type: 'pop-in', duration: 0.6, delay: 0.2 },
         };
         break;
+      case 'shape':
+        newEl = {
+          id: baseId,
+          type: 'shape',
+          shapeKind: 'arrow-right',
+          content: '',
+          x: 50,
+          y: 50,
+          width: 22,
+          height: 50,
+          rotation: 0,
+          color: '#6b0b45',
+          backgroundColor: '#6b0b45',
+          strokeWidth: 5,
+          borderRadius: 12,
+          animation: { type: 'pop-in', duration: 0.5, delay: 0.2 },
+        };
+        break;
+      case 'badge':
+        newEl = {
+          id: baseId,
+          type: 'shape',
+          shapeKind: 'rectangle',
+          content: 'نکته طلایی',
+          x: 50,
+          y: 50,
+          width: 18,
+          height: 48,
+          fontSize: 22,
+          fontWeight: '700',
+          color: '#ffffff',
+          backgroundColor: '#6b0b45',
+          borderRadius: 999,
+          animation: { type: 'pop-in', duration: 0.5, delay: 0.2 },
+        };
+        break;
       default:
         newEl = {
           id: baseId,

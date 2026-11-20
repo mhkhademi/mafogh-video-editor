@@ -28,18 +28,23 @@ export interface AnimationConfig {
   counterSuffix?: string;
 }
 
-export type ElementType = 'title' | 'subtitle' | 'paragraph' | 'badge' | 'image' | 'card' | 'list-box' | 'icon';
+export type ElementType = 'title' | 'subtitle' | 'paragraph' | 'badge' | 'image' | 'card' | 'list-box' | 'icon' | 'shape';
+
+export type ShapeKind = 'arrow-right' | 'arrow-left' | 'arrow-up' | 'arrow-down' | 'rectangle' | 'circle' | 'divider';
 
 export interface SlideElement {
   id: string;
   type: ElementType;
-  content: string; // text, image url, or icon name
+  shapeKind?: ShapeKind;
+  content: string; // text, image url, icon name, or shape label
   subcontent?: string; // e.g. English translation or secondary line
   
   // Coordinates based on 1920x1080 canvas
   x: number; // percentage (0-100) or pixel
   y: number; // percentage (0-100)
   width?: number; // percentage (0-100)
+  height?: number; // height in px or percentage
+  rotation?: number; // degrees (0, 45, 90, 180, 270)
   
   // Styling
   color?: string;
@@ -52,7 +57,7 @@ export interface SlideElement {
   borderRadius?: number;
   padding?: number;
   icon?: string;
-  strokeWidth?: number; // for vector icons (e.g. 1, 1.5, 2, 2.5, 3)
+  strokeWidth?: number; // for vector icons & shapes (e.g. 1, 2, 4, 6)
   badgeNumber?: string;
   
   // Animation
