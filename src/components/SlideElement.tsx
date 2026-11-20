@@ -201,35 +201,36 @@ export const SlideElement: React.FC<SlideElementProps> = ({
       case 'arrow': {
         const color = element.color || '#6b0b45';
         const strokeWidth = element.strokeWidth || 5;
-        const arrowW = element.width ? `${element.width}%` : '25%';
+        const headSize = Math.max(strokeWidth * 3.2, 18);
 
         return (
-          <div
-            className="flex items-center justify-center pointer-events-none py-1"
-            style={{ width: arrowW }}
-          >
+          <div className="w-full h-8 flex items-center justify-center pointer-events-none px-1">
             <svg
-              className="w-full h-10 overflow-visible"
-              viewBox="0 0 200 40"
+              className="w-full h-8 overflow-visible"
               fill="none"
+              style={{ display: 'block' }}
             >
               <defs>
                 <marker
                   id={`arrowhead-${element.id}`}
-                  markerWidth="8"
-                  markerHeight="8"
-                  refX="7"
-                  refY="4"
+                  markerWidth={headSize}
+                  markerHeight={headSize}
+                  refX={headSize * 0.9}
+                  refY={headSize / 2}
                   orient="auto"
+                  markerUnits="userSpaceOnUse"
                 >
-                  <path d="M 0 0 L 8 4 L 0 8 z" fill={color} />
+                  <path
+                    d={`M 0 0 L ${headSize} ${headSize / 2} L 0 ${headSize} z`}
+                    fill={color}
+                  />
                 </marker>
               </defs>
               <line
-                x1="8"
-                y1="20"
-                x2="192"
-                y2="20"
+                x1="4"
+                y1="50%"
+                x2="100%"
+                y2="50%"
                 stroke={color}
                 strokeWidth={strokeWidth}
                 strokeLinecap="round"
@@ -243,12 +244,8 @@ export const SlideElement: React.FC<SlideElementProps> = ({
       case 'divider': {
         const color = element.color || '#6b0b45';
         const strokeWidth = element.strokeWidth || 3;
-        const divW = element.width ? `${element.width}%` : '60%';
         return (
-          <div
-            className="flex items-center justify-center py-2"
-            style={{ width: divW }}
-          >
+          <div className="w-full flex items-center justify-center py-1.5 pointer-events-none">
             <div
               className="w-full rounded-full transition-all"
               style={{
@@ -269,7 +266,7 @@ export const SlideElement: React.FC<SlideElementProps> = ({
           const color = element.color || '#6b0b45';
           const strokeWidth = element.strokeWidth || 3;
           return (
-            <div className="w-full flex items-center justify-center py-2">
+            <div className="w-full flex items-center justify-center py-1.5 pointer-events-none">
               <div
                 className="w-full rounded-full transition-all"
                 style={{
@@ -287,38 +284,39 @@ export const SlideElement: React.FC<SlideElementProps> = ({
         // Arrow fallback
         const color = element.color || '#6b0b45';
         const strokeWidth = element.strokeWidth || 5;
-        const arrowW = element.width ? `${element.width}%` : '25%';
+        const headSize = Math.max(strokeWidth * 3.2, 18);
         return (
-          <div
-            className="flex items-center justify-center pointer-events-none py-1"
-            style={{ width: arrowW }}
-          >
+          <div className="w-full h-8 flex items-center justify-center pointer-events-none px-1">
             <svg
-              className="w-full h-10 overflow-visible"
-              viewBox="0 0 200 40"
+              className="w-full h-8 overflow-visible"
               fill="none"
+              style={{ display: 'block' }}
             >
               <defs>
                 <marker
-                  id={`arrowhead-${element.id}`}
-                  markerWidth="8"
-                  markerHeight="8"
-                  refX="7"
-                  refY="4"
+                  id={`arrowhead-fallback-${element.id}`}
+                  markerWidth={headSize}
+                  markerHeight={headSize}
+                  refX={headSize * 0.9}
+                  refY={headSize / 2}
                   orient="auto"
+                  markerUnits="userSpaceOnUse"
                 >
-                  <path d="M 0 0 L 8 4 L 0 8 z" fill={color} />
+                  <path
+                    d={`M 0 0 L ${headSize} ${headSize / 2} L 0 ${headSize} z`}
+                    fill={color}
+                  />
                 </marker>
               </defs>
               <line
-                x1="8"
-                y1="20"
-                x2="192"
-                y2="20"
+                x1="4"
+                y1="50%"
+                x2="100%"
+                y2="50%"
                 stroke={color}
                 strokeWidth={strokeWidth}
                 strokeLinecap="round"
-                markerEnd={`url(#arrowhead-${element.id})`}
+                markerEnd={`url(#arrowhead-fallback-${element.id})`}
               />
             </svg>
           </div>
