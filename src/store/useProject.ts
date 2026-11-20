@@ -338,6 +338,22 @@ export function useProjectStore() {
           animation: { type: 'pop-in', duration: 0.8, delay: 0.4 },
         };
         break;
+      case 'icon':
+        newEl = {
+          id: baseId,
+          type: 'icon',
+          content: 'Sparkles',
+          x: 50,
+          y: 50,
+          fontSize: 84,
+          color: '#6b0b45',
+          strokeWidth: 2,
+          backgroundColor: 'transparent',
+          borderRadius: 999,
+          padding: 0,
+          animation: { type: 'pop-in', duration: 0.6, delay: 0.2 },
+        };
+        break;
       default:
         newEl = {
           id: baseId,

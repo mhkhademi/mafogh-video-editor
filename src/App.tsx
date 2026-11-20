@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useProjectStore } from './store/useProject';
+import { SlideElement } from './types';
 import { Header } from './components/Header';
 import { SlideSidebar } from './components/SlideSidebar';
 import { CanvasStage } from './components/CanvasStage';
 import { PropertiesPanel } from './components/PropertiesPanel';
 import { TimelineBar } from './components/TimelineBar';
 import { ExportModal } from './components/ExportModal';
+import { IconPickerModal } from './components/IconPickerModal';
 
 export const App: React.FC = () => {
   const {
@@ -47,6 +49,50 @@ export const App: React.FC = () => {
   } = useProjectStore();
 
   const [isExportModalOpen, setIsExportModalOpen] = useState<boolean>(false);
+  const [isIconPickerOpen, setIsIconPickerOpen] = useState<boolean>(false);
+  const [iconPickerMode, setIconPickerMode] = useState<'new' | 'replace'>('new');
+
+  const handleSelectIcon = (config: {
+    iconName: string;
+    color: string;
+    backgroundColor?: string;
+    borderRadius?: number;
+    padding?: number;
+  }) => {
+    if (iconPickerMode === 'replace' && selectedElement) {
+      updateElement(activeSlide.id, selectedElement.id, {
+        content: config.iconName,
+        color: config.color,
+        backgroundColor: config.backgroundColor,
+        borderRadius: config.borderRadius,
+        padding: config.padding,
+      });
+    } else {
+      const baseId = `el-${Date.now()}`;
+      const newEl: SlideElement = {
+        id: baseId,
+        type: 'icon',
+        content: config.iconName,
+        x: 50,
+        y: 50,
+        fontSize: 84,
+        color: config.color || '#6b0b45',
+        strokeWidth: 2,
+        backgroundColor: config.backgroundColor || 'transparent',
+        borderRadius: config.borderRadius ?? 999,
+        padding: config.padding ?? 0,
+        animation: {
+          type: 'pop-in',
+          duration: 0.6,
+          delay: 0.2,
+        },
+      };
+      updateSlide(activeSlide.id, {
+        elements: [...activeSlide.elements, newEl],
+      });
+      setSelectedElementId(baseId);
+    }
+  };
 
   // Global Keyboard shortcuts: Spacebar, Undo/Redo, Delete, Duplicate, Arrow Keys
   useEffect(() => {
@@ -229,6 +275,10 @@ export const App: React.FC = () => {
           onSendToBack={(elementId) => sendToBack(activeSlide.id, elementId)}
           onToggleLock={(elementId) => toggleLockElement(activeSlide.id, elementId)}
           onSelectElement={setSelectedElementId}
+          onOpenIconPicker={(mode) => {
+            setIconPickerMode(mode);
+            setIsIconPickerOpen(true);
+          }}
         />
       </div>
 
@@ -268,6 +318,24 @@ export const App: React.FC = () => {
         totalDuration={totalDuration}
         isOpen={isExportModalOpen}
         onClose={() => setIsExportModalOpen(false)}
+      />
+
+      {/* Vector Icon Library Picker Modal */}
+      <IconPickerModal
+        isOpen={isIconPickerOpen}
+        onClose={() => setIsIconPickerOpen(false)}
+        onSelectIcon={handleSelectIcon}
+        initialIconName={
+          iconPickerMode === 'replace' && selectedElement?.type === 'icon'
+            ? selectedElement.content
+            : 'Sparkles'
+        }
+        initialColor={
+          iconPickerMode === 'replace' && selectedElement?.type === 'icon'
+            ? selectedElement.color
+            : '#6b0b45'
+        }
+        isReplacing={iconPickerMode === 'replace'}
       />
     </div>
   );

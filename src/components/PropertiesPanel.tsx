@@ -33,6 +33,7 @@ import {
   ArrowUpToLine,
   ArrowDownToLine,
 } from 'lucide-react';
+import { getLucideIcon } from '../utils/iconRegistry';
 
 interface PropertiesPanelProps {
   slide: Slide;
@@ -48,6 +49,7 @@ interface PropertiesPanelProps {
   onSendToBack?: (elementId: string) => void;
   onToggleLock?: (elementId: string) => void;
   onSelectElement?: (elementId: string | null) => void;
+  onOpenIconPicker?: (mode: 'new' | 'replace') => void;
 }
 
 export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
@@ -64,6 +66,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
   onSendToBack,
   onToggleLock,
   onSelectElement,
+  onOpenIconPicker,
 }) => {
   const [activeTab, setActiveTab] = useState<'slide' | 'element' | 'layers'>('slide');
 
@@ -283,6 +286,13 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                   <ImageIcon size={16} className="text-violet-400" />
                   <span>عکس / تصویر</span>
                 </button>
+                <button
+                  onClick={() => (onOpenIconPicker ? onOpenIconPicker('new') : onAddElement('icon'))}
+                  className="col-span-2 p-2.5 bg-pink-950/40 hover:bg-pink-950/60 border border-pink-700/60 hover:border-pink-500 rounded-lg flex items-center justify-center gap-2 text-xs text-pink-200 transition-colors shadow-sm"
+                >
+                  <Sparkles size={16} className="text-pink-400 animate-pulse" />
+                  <span className="font-bold text-pink-300">کتابخانه آیکون‌های وکتور (Icon Library)</span>
+                </button>
               </div>
             </div>
           </div>
@@ -349,8 +359,167 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                   </div>
                 </div>
 
-                {/* Content Input (Text vs Image URL/Upload) */}
-                {selectedElement.type === 'image' ? (
+                {/* Content Input (Text vs Image URL/Upload vs Icon) */}
+                {selectedElement.type === 'icon' ? (
+                  <div className="space-y-3.5 p-3.5 bg-slate-800/60 rounded-xl border border-slate-700/70">
+                    <div className="flex items-center justify-between pb-2 border-b border-slate-700/60">
+                      <div className="flex items-center gap-2.5">
+                        <div
+                          className="w-11 h-11 rounded-xl flex items-center justify-center border border-slate-650 shadow-inner"
+                          style={{
+                            backgroundColor: selectedElement.backgroundColor || 'transparent',
+                            color: selectedElement.color || '#6b0b45',
+                          }}
+                        >
+                          {React.createElement(getLucideIcon(selectedElement.content || 'Sparkles'), {
+                            size: 28,
+                            strokeWidth: selectedElement.strokeWidth || 2,
+                          })}
+                        </div>
+                        <div>
+                          <div className="text-xs font-bold text-white font-mono">{selectedElement.content}</div>
+                          <div className="text-[10px] text-pink-300">آیکون وکتور زنده</div>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => onOpenIconPicker?.('replace')}
+                        className="px-3 py-1.5 bg-pink-700 hover:bg-pink-600 text-white rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 shadow-md hover:scale-105"
+                      >
+                        <Sparkles size={13} />
+                        <span>تغییر آیکون</span>
+                      </button>
+                    </div>
+
+                    {/* Icon Size Slider */}
+                    <div>
+                      <RangeSlider
+                        label="اندازه آیکون"
+                        value={selectedElement.fontSize || 84}
+                        min={24}
+                        max={240}
+                        step={4}
+                        unit="px"
+                        color="pink"
+                        onChange={(val) =>
+                          onUpdateElement(selectedElement.id, {
+                            fontSize: Math.round(val),
+                          })
+                        }
+                      />
+                    </div>
+
+                    {/* Stroke Width */}
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-400 mb-1.5">
+                        ضخامت خطوط (Stroke Width)
+                      </label>
+                      <div className="grid grid-cols-5 gap-1 bg-slate-900 p-1 rounded-lg border border-slate-750">
+                        {[1, 1.5, 2, 2.5, 3].map((sw) => (
+                          <button
+                            key={sw}
+                            onClick={() => onUpdateElement(selectedElement.id, { strokeWidth: sw })}
+                            className={`py-1 text-xs rounded transition-colors ${
+                              (selectedElement.strokeWidth || 2) === sw
+                                ? 'bg-pink-700 text-white font-bold'
+                                : 'text-slate-400 hover:text-white'
+                            }`}
+                          >
+                            {sw}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Icon Color */}
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-400 mb-1">
+                        رنگ آیکون
+                      </label>
+                      <ColorPicker
+                        color={selectedElement.color || '#6b0b45'}
+                        onChange={(hex) => onUpdateElement(selectedElement.id, { color: hex })}
+                      />
+                    </div>
+
+                    {/* Background & Frame Style */}
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-400 mb-1.5">
+                        کادر و پس‌زمینه آیکون
+                      </label>
+                      <div className="grid grid-cols-3 gap-1 bg-slate-900 p-1 rounded-lg border border-slate-750 mb-2">
+                        <button
+                          onClick={() =>
+                            onUpdateElement(selectedElement.id, {
+                              backgroundColor: 'transparent',
+                              padding: 0,
+                            })
+                          }
+                          className={`py-1 text-xs rounded transition-colors ${
+                            !selectedElement.backgroundColor || selectedElement.backgroundColor === 'transparent'
+                              ? 'bg-pink-700 text-white font-bold'
+                              : 'text-slate-400 hover:text-white'
+                          }`}
+                        >
+                          بدون کادر
+                        </button>
+                        <button
+                          onClick={() =>
+                            onUpdateElement(selectedElement.id, {
+                              backgroundColor:
+                                selectedElement.backgroundColor && selectedElement.backgroundColor !== 'transparent'
+                                  ? selectedElement.backgroundColor
+                                  : '#fdf2f8',
+                              borderRadius: 999,
+                              padding: 20,
+                            })
+                          }
+                          className={`py-1 text-xs rounded transition-colors ${
+                            selectedElement.backgroundColor &&
+                            selectedElement.backgroundColor !== 'transparent' &&
+                            (selectedElement.borderRadius ?? 0) > 50
+                              ? 'bg-pink-700 text-white font-bold'
+                              : 'text-slate-400 hover:text-white'
+                          }`}
+                        >
+                          دایره‌ای
+                        </button>
+                        <button
+                          onClick={() =>
+                            onUpdateElement(selectedElement.id, {
+                              backgroundColor:
+                                selectedElement.backgroundColor && selectedElement.backgroundColor !== 'transparent'
+                                  ? selectedElement.backgroundColor
+                                  : '#fdf2f8',
+                              borderRadius: 18,
+                              padding: 20,
+                            })
+                          }
+                          className={`py-1 text-xs rounded transition-colors ${
+                            selectedElement.backgroundColor &&
+                            selectedElement.backgroundColor !== 'transparent' &&
+                            (selectedElement.borderRadius ?? 0) <= 50
+                              ? 'bg-pink-700 text-white font-bold'
+                              : 'text-slate-400 hover:text-white'
+                          }`}
+                        >
+                          مربعی
+                        </button>
+                      </div>
+
+                      {selectedElement.backgroundColor && selectedElement.backgroundColor !== 'transparent' && (
+                        <div>
+                          <label className="block text-[11px] text-slate-400 mb-1">
+                            رنگ پس‌زمینه کادر
+                          </label>
+                          <ColorPicker
+                            color={selectedElement.backgroundColor}
+                            onChange={(hex) => onUpdateElement(selectedElement.id, { backgroundColor: hex })}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ) : selectedElement.type === 'image' ? (
                   <div className="space-y-2">
                     <label className="block text-xs font-semibold text-slate-400">
                       آدرس یا فایل تصویر
@@ -422,7 +591,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                 )}
 
                 {/* Typography, Colors & Text Alignment - ONLY FOR TEXT/CARD ELEMENTS */}
-                {selectedElement.type !== 'image' && (
+                {selectedElement.type !== 'image' && selectedElement.type !== 'icon' && (
                   <>
                     {/* Typography & Colors */}
                     <div className="space-y-3">

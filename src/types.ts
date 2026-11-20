@@ -28,12 +28,12 @@ export interface AnimationConfig {
   counterSuffix?: string;
 }
 
-export type ElementType = 'title' | 'subtitle' | 'paragraph' | 'badge' | 'image' | 'card' | 'list-box';
+export type ElementType = 'title' | 'subtitle' | 'paragraph' | 'badge' | 'image' | 'card' | 'list-box' | 'icon';
 
 export interface SlideElement {
   id: string;
   type: ElementType;
-  content: string; // text or image url
+  content: string; // text, image url, or icon name
   subcontent?: string; // e.g. English translation or secondary line
   
   // Coordinates based on 1920x1080 canvas
@@ -43,7 +43,7 @@ export interface SlideElement {
   
   // Styling
   color?: string;
-  fontSize?: number; // scale px in 1080p
+  fontSize?: number; // scale px in 1080p (or icon size)
   fontWeight?: '300' | '400' | '500' | '600' | '700' | '800' | '900';
   textAlign?: 'right' | 'center' | 'left';
   nowrap?: boolean;
@@ -52,6 +52,7 @@ export interface SlideElement {
   borderRadius?: number;
   padding?: number;
   icon?: string;
+  strokeWidth?: number; // for vector icons (e.g. 1, 1.5, 2, 2.5, 3)
   badgeNumber?: string;
   
   // Animation

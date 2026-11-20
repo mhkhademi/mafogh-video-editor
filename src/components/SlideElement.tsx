@@ -2,6 +2,7 @@ import React from 'react';
 import { Lock } from 'lucide-react';
 import { SlideElement as ISlideElement } from '../types';
 import { calculateMotion } from '../utils/motionUtils';
+import { getLucideIcon } from '../utils/iconRegistry';
 
 interface SlideElementProps {
   element: ISlideElement;
@@ -169,6 +170,33 @@ export const SlideElement: React.FC<SlideElementProps> = ({
             style={{ width: '100%' }}
           />
         );
+
+      case 'icon': {
+        const IconComponent = getLucideIcon(element.content || 'Sparkles');
+        const size = element.fontSize || 84;
+        const strokeWidth = element.strokeWidth || 2;
+        const hasBg = Boolean(element.backgroundColor && element.backgroundColor !== 'transparent');
+        const pad = element.padding ?? (hasBg ? 20 : 0);
+
+        return (
+          <div
+            className="inline-flex items-center justify-center transition-all select-none"
+            style={{
+              backgroundColor: element.backgroundColor || 'transparent',
+              borderRadius: element.borderRadius !== undefined ? `${element.borderRadius}px` : (hasBg ? '999px' : '0px'),
+              padding: `${pad}px`,
+              border: element.borderColor ? `2px solid ${element.borderColor}` : undefined,
+              boxShadow: hasBg ? '0 10px 25px -5px rgba(0, 0, 0, 0.2)' : undefined,
+            }}
+          >
+            <IconComponent
+              size={size}
+              color={element.color || '#6b0b45'}
+              strokeWidth={strokeWidth}
+            />
+          </div>
+        );
+      }
 
       default:
         return <div>{textToShow}</div>;

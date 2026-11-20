@@ -1,5 +1,6 @@
 import { Project, Slide, SlideElement } from '../types';
 import { calculateMotion } from './motionUtils';
+import { getIconSvgDataUri } from './iconRegistry';
 
 export function renderSlideToCanvas(
   ctx: CanvasRenderingContext2D,
@@ -175,6 +176,41 @@ export function renderSlideToCanvas(
         ctx.drawImage(img, -imgW / 2, -imgH / 2, imgW, imgH);
         ctx.restore();
       }
+    } else if (element.type === 'icon') {
+      const size = element.fontSize || 84;
+      const strokeWidth = element.strokeWidth || 2;
+      const color = element.color || '#6b0b45';
+      const hasBg = Boolean(element.backgroundColor && element.backgroundColor !== 'transparent');
+      const pad = element.padding ?? (hasBg ? 20 : 0);
+      const totalW = size + pad * 2;
+      const totalH = size + pad * 2;
+
+      ctx.save();
+      if (hasBg) {
+        ctx.fillStyle = element.backgroundColor!;
+        const radius = element.borderRadius !== undefined ? element.borderRadius : 999;
+        ctx.beginPath();
+        ctx.roundRect(-totalW / 2, -totalH / 2, totalW, totalH, radius);
+        ctx.fill();
+
+        if (element.borderColor) {
+          ctx.strokeStyle = element.borderColor;
+          ctx.lineWidth = 2;
+          ctx.stroke();
+        }
+      }
+
+      const cacheKey = `icon-${element.content}-${color}-${size}-${strokeWidth}`;
+      let iconImg = imageCache?.get(cacheKey);
+      if (!iconImg) {
+        iconImg = new Image();
+        iconImg.src = getIconSvgDataUri(element.content || 'Sparkles', color, size, strokeWidth);
+        imageCache?.set(cacheKey, iconImg);
+      }
+      if (iconImg.complete && iconImg.naturalWidth > 0) {
+        ctx.drawImage(iconImg, -size / 2, -size / 2, size, size);
+      }
+      ctx.restore();
     }
 
     ctx.restore();

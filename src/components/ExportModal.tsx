@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { X, Video, Download, CheckCircle, Loader2, HardDrive, AlertCircle, Clock, Zap } from 'lucide-react';
 import { Project } from '../types';
 import { renderSlideToCanvas } from '../utils/canvasRenderer';
+import { getIconSvgDataUri } from '../utils/iconRegistry';
 
 interface ExportModalProps {
   project: Project;
@@ -22,6 +23,15 @@ async function preloadProjectAssets(project: Project): Promise<Map<string, HTMLI
     slide.elements.forEach((el) => {
       if (el.type === 'image' && el.content) {
         urls.add(el.content);
+      } else if (el.type === 'icon' && el.content) {
+        const size = el.fontSize || 84;
+        const strokeWidth = el.strokeWidth || 2;
+        const color = el.color || '#6b0b45';
+        const key = `icon-${el.content}-${color}-${size}-${strokeWidth}`;
+        const dataUri = getIconSvgDataUri(el.content, color, size, strokeWidth);
+        const iconImg = new Image();
+        iconImg.src = dataUri;
+        imageMap.set(key, iconImg);
       }
     });
   });
