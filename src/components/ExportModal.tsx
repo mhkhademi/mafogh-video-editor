@@ -684,10 +684,10 @@ export const ExportModal: React.FC<ExportModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 z-50 select-none animate-fadeIn">
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden">
+    <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 z-50 select-none animate-fadeIn overflow-y-auto">
+      <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col max-h-[90vh] my-auto">
         {/* Header */}
-        <div className="p-5 border-b border-slate-800 flex items-center justify-between">
+        <div className="p-4 sm:p-5 border-b border-slate-800 flex items-center justify-between shrink-0 bg-slate-900/90 z-10">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-lg bg-pink-600/20 text-pink-400 flex items-center justify-center">
               <Video size={18} />
@@ -707,8 +707,8 @@ export const ExportModal: React.FC<ExportModalProps> = ({
           )}
         </div>
 
-        {/* Body */}
-        <div className="p-6 space-y-5">
+        {/* Scrollable Body */}
+        <div className="p-4 sm:p-6 space-y-4 overflow-y-auto flex-1 custom-scrollbar">
           {/* Render Engine Selection */}
           <div>
             <div className="flex items-center justify-between mb-2">
@@ -963,7 +963,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
         </div>
 
         {/* Footer actions */}
-        <div className="p-5 border-t border-slate-800 bg-slate-950/50 flex items-center justify-end gap-3">
+        <div className="p-4 sm:p-5 border-t border-slate-800 bg-slate-950/90 flex items-center justify-end gap-3 shrink-0 z-10">
           <button
             disabled={isRendering}
             onClick={onClose}
