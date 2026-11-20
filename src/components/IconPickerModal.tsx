@@ -6,6 +6,7 @@ import {
   getLucideIcon,
   IconDefinition,
 } from '../utils/iconRegistry';
+import { ColorPicker } from './ColorPicker';
 
 interface IconPickerModalProps {
   isOpen: boolean;
@@ -80,20 +81,10 @@ export const IconPickerModal: React.FC<IconPickerModalProps> = ({
     onClose();
   };
 
-  const PRESET_COLORS = [
-    { label: 'مافوق', value: '#6b0b45' },
-    { label: 'سرمه‌ای', value: '#1e293b' },
-    { label: 'سفید', value: '#ffffff' },
-    { label: 'سبز', value: '#10b981' },
-    { label: 'طلایی', value: '#f59e0b' },
-    { label: 'قرمز', value: '#ef4444' },
-    { label: 'آبی', value: '#3b82f6' },
-  ];
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in duration-200">
       <div
-        className="w-full max-w-3xl bg-slate-900 border border-slate-700/80 rounded-2xl shadow-2xl flex flex-col overflow-hidden max-h-[88vh]"
+        className="w-full max-w-3xl bg-slate-900 border border-slate-700/80 rounded-2xl shadow-2xl flex flex-col max-h-[88vh]"
         dir="rtl"
       >
         {/* Modal Header */}
@@ -221,35 +212,15 @@ export const IconPickerModal: React.FC<IconPickerModalProps> = ({
         </div>
 
         {/* Bottom Styling & Confirmation Bar */}
-        <div className="p-4 border-t border-slate-800 bg-slate-900/95 flex flex-wrap items-center justify-between gap-4">
-          {/* Quick Color Picker */}
-          <div className="flex items-center gap-2">
+        <div className="p-4 border-t border-slate-800 bg-slate-900/95 flex flex-wrap items-center justify-between gap-4 relative overflow-visible z-30">
+          {/* Studio Color Picker matching Properties Panel */}
+          <div className="flex items-center gap-2.5">
             <span className="text-xs text-slate-400">رنگ آیکون:</span>
-            <div className="flex items-center gap-1.5">
-              {PRESET_COLORS.map((c) => (
-                <button
-                  key={c.value}
-                  onClick={() => setSelectedColor(c.value)}
-                  className={`w-6 h-6 rounded-full border border-slate-600 flex items-center justify-center transition-transform hover:scale-110 ${
-                    selectedColor === c.value ? 'ring-2 ring-pink-400 ring-offset-2 ring-offset-slate-900 scale-110' : ''
-                  }`}
-                  style={{ backgroundColor: c.value }}
-                  title={c.label}
-                >
-                  {selectedColor === c.value && (
-                    <Check
-                      size={12}
-                      className={c.value === '#ffffff' ? 'text-slate-900' : 'text-white'}
-                    />
-                  )}
-                </button>
-              ))}
-              <input
-                type="color"
-                value={selectedColor}
-                onChange={(e) => setSelectedColor(e.target.value)}
-                className="w-6 h-6 rounded-full cursor-pointer bg-transparent border-0"
-                title="رنگ سفارشی"
+            <div className="w-36">
+              <ColorPicker
+                color={selectedColor}
+                onChange={setSelectedColor}
+                placement="top"
               />
             </div>
           </div>

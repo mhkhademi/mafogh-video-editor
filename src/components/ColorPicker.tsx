@@ -5,6 +5,7 @@ interface ColorPickerProps {
   color: string;
   onChange: (hex: string) => void;
   label?: string;
+  placement?: 'top' | 'bottom';
 }
 
 // Convert HEX string to RGB object
@@ -109,7 +110,12 @@ function hsvToRgb(h: number, s: number, v: number): { r: number; g: number; b: n
   };
 }
 
-export const ColorPicker: React.FC<ColorPickerProps> = ({ color, onChange, label }) => {
+export const ColorPicker: React.FC<ColorPickerProps> = ({
+  color,
+  onChange,
+  label,
+  placement = 'bottom',
+}) => {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const satValBoxRef = useRef<HTMLDivElement>(null);
@@ -331,7 +337,9 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({ color, onChange, label
         <div
           dir="ltr"
           style={{ width: '280px' }}
-          className="absolute z-50 mt-2 right-0 bg-[#000000] border border-neutral-800 rounded-2xl p-3.5 shadow-2xl backdrop-blur-xl animate-fadeIn select-none"
+          className={`absolute z-50 right-0 bg-[#000000] border border-neutral-800 rounded-2xl p-3.5 shadow-2xl backdrop-blur-xl animate-fadeIn select-none ${
+            placement === 'top' ? 'bottom-full mb-2' : 'mt-2'
+          }`}
         >
           {/* 1. Large Saturation/Brightness 2D Area (No light border, pure seamless gradient) */}
           <div
