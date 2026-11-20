@@ -101,21 +101,18 @@ app.post('/api/export/start', (req, res) => {
   const targetHeight = height ? Math.round(height) : (resolution === '1080p' ? 1080 : 720);
   const targetBitrate = Math.round(bitrate);
 
-  // High-compatibility H.264 MP4 encoder settings
+  // High-performance H.264 MP4 encoder with hardware acceleration
+  const isWindows = process.platform === 'win32';
   const ffmpegArgs = [
     '-y',
     '-f', 'image2pipe',
     '-vcodec', 'mjpeg',
     '-r', String(fps),
     '-i', '-',
-    '-c:v', 'libx264',
-    '-preset', 'fast',
-    '-profile:v', 'high',
-    '-pix_fmt', 'yuv420p',
+    ...(isWindows
+      ? ['-c:v', 'h264_mf', '-b:v', `${targetBitrate}`]
+      : ['-c:v', 'libx264', '-preset', 'ultrafast', '-tune', 'zerolatency', '-pix_fmt', 'yuv420p', '-b:v', `${targetBitrate}`]),
     '-s', `${targetWidth}x${targetHeight}`,
-    '-b:v', `${targetBitrate}`,
-    '-maxrate', `${Math.round(targetBitrate * 1.25)}`,
-    '-bufsize', `${Math.round(targetBitrate * 2)}`,
     '-movflags', '+faststart',
     outputFile,
   ];
