@@ -1,5 +1,10 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { ChevronDown, Pipette } from 'lucide-react';
+import { ChevronDown, Pipette, Plus, Trash2, Check, Sparkles, Bookmark, Palette } from 'lucide-react';
+import {
+  MAFOGH_BRAND_SCALE,
+  MAFOGH_BASE_COLOR,
+  THEME_PALETTES,
+} from '../constants/brand';
 
 interface ColorPickerProps {
   color: string;
@@ -7,6 +12,8 @@ interface ColorPickerProps {
   label?: string;
   placement?: 'top' | 'bottom';
 }
+
+const STORAGE_KEY_SAVED_COLORS = 'mafogh_custom_palette';
 
 // Convert HEX string to RGB object
 function hexToRgb(hex: string): { r: number; g: number; b: number } {
@@ -19,7 +26,7 @@ function hexToRgb(hex: string): { r: number; g: number; b: number } {
   }
   const num = parseInt(clean, 16);
   if (isNaN(num) || clean.length !== 6) {
-    return { r: 15, g: 23, b: 42 };
+    return { r: 107, g: 11, b: 69 }; // Mafogh base RGB default (#6B0B45)
   }
   return {
     r: (num >> 16) & 255,
@@ -106,7 +113,7 @@ function hsvToRgb(h: number, s: number, v: number): { r: number; g: number; b: n
   return {
     r: Math.round((r + m) * 255),
     g: Math.round((g + m) * 255),
-    b: Math.round((b + m) * 255),
+    b: Math.round((g + m) * 255),
   };
 }
 
@@ -121,23 +128,37 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
   const satValBoxRef = useRef<HTMLDivElement>(null);
   const hueBarRef = useRef<HTMLDivElement>(null);
 
+  // Palette tabs: 'mafogh' | 'themes' | 'custom'
+  const [activeTab, setActiveTab] = useState<'mafogh' | 'themes' | 'custom'>('mafogh');
+  const [selectedThemeId, setSelectedThemeId] = useState<string>('luxe');
+
+  // Custom user-saved colors from localStorage
+  const [savedColors, setSavedColors] = useState<string[]>(() => {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY_SAVED_COLORS);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) return parsed;
+      }
+    } catch (_) {}
+    return [MAFOGH_BASE_COLOR, '#0F172A', '#F59E0B', '#3B82F6', '#10B981'];
+  });
+
   // Initialize HSV from prop color
-  const initialRgb = hexToRgb(color || '#701A45');
+  const initialRgb = hexToRgb(color || MAFOGH_BASE_COLOR);
   const initialHsv = rgbToHsv(initialRgb.r, initialRgb.g, initialRgb.b);
 
   const [hsv, setHsv] = useState(initialHsv);
-  // Store hex characters without the leading '#' symbol
   const [hexDigits, setHexDigits] = useState<string>(
-    (color || '#701A45').replace(/^#/, '').toUpperCase()
+    (color || MAFOGH_BASE_COLOR).replace(/^#/, '').toUpperCase()
   );
   const [format, setFormat] = useState<'HEX' | 'RGB'>('HEX');
 
-  // Keep internal state synced when prop color changes from outside
+  // Sync internal state when prop color changes from outside
   useEffect(() => {
     if (color) {
       const rgb = hexToRgb(color);
       const newHsv = rgbToHsv(rgb.r, rgb.g, rgb.b);
-      // Avoid resetting hue to 0 when saturation is 0 (white or grey)
       setHsv((prev) => ({
         h: newHsv.s === 0 ? prev.h : newHsv.h,
         s: newHsv.s,
@@ -147,7 +168,7 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
     }
   }, [color]);
 
-  // Handle click outside to close popover
+  // Click outside to close popover
   useEffect(() => {
     if (!isOpen) return;
     const handleClickOutside = (e: MouseEvent) => {
@@ -178,7 +199,6 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
   );
 
   // Drag on Saturation/Value 2D Area
-  // Top-left is Pure Hue (S=1, V=1), Top-right is White (S=0, V=1), Bottom is Black (V=0)
   const handleSatValMouseDown = (e: React.MouseEvent) => {
     e.preventDefault();
     if (!satValBoxRef.current) return;
@@ -189,8 +209,6 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
       const x = Math.max(0, Math.min(rect.width, clientX - rect.left));
       const y = Math.max(0, Math.min(rect.height, clientY - rect.top));
 
-      // In the user's reference:
-      // Left = Full Saturation (S = 1), Right = White (S = 0)
       const s = 1 - x / rect.width;
       const v = 1 - y / rect.height;
 
@@ -216,7 +234,6 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
   };
 
   // Drag on Hue Slider Bar
-  // Left is Red (360), moving right: Magenta, Blue, Cyan, Green, Yellow, Red (0)
   const handleHueMouseDown = (e: React.MouseEvent) => {
     e.preventDefault();
     if (!hueBarRef.current) return;
@@ -225,10 +242,8 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
       if (!hueBarRef.current) return;
       const rect = hueBarRef.current.getBoundingClientRect();
       const x = Math.max(0, Math.min(rect.width, clientX - rect.left));
-      const ratio = x / rect.width; // 0 to 1
+      const ratio = x / rect.width;
 
-      // Matching the spectrum in user screenshot:
-      // Red(360) -> Magenta(300) -> Blue(240) -> Cyan(180) -> Green(120) -> Yellow(60) -> Red(0)
       const h = ((360 - ratio * 360) % 360 + 360) % 360;
 
       const nextHsv = { ...hsv, h };
@@ -252,9 +267,8 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
     window.addEventListener('mouseup', handleMouseUp);
   };
 
-  // Manual HEX input change (clean digits only, with permanent # prefix)
+  // Manual HEX input change
   const handleHexInputChange = (rawVal: string) => {
-    // Strip any hashtag or non-hex characters, uppercase, max 6 characters
     const clean = rawVal.replace(/[^0-9a-fA-F]/g, '').slice(0, 6).toUpperCase();
     setHexDigits(clean);
     if (clean.length === 6 || clean.length === 3) {
@@ -266,7 +280,13 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
     }
   };
 
-  // EyeDropper API support (browser native color picker eyedropper if supported)
+  // Select a swatch color directly
+  const handleSelectColor = (targetHex: string) => {
+    const formatted = targetHex.toUpperCase();
+    handleHexInputChange(formatted);
+  };
+
+  // EyeDropper API support
   const handleEyeDropper = async () => {
     if ('EyeDropper' in window) {
       try {
@@ -279,6 +299,28 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
     }
   };
 
+  // Save current color to custom palette
+  const handleSaveCurrentColor = () => {
+    const cur = (color.startsWith('#') ? color : `#${color}`).toUpperCase();
+    if (!savedColors.includes(cur)) {
+      const next = [cur, ...savedColors].slice(0, 24);
+      setSavedColors(next);
+      try {
+        localStorage.setItem(STORAGE_KEY_SAVED_COLORS, JSON.stringify(next));
+      } catch (_) {}
+    }
+  };
+
+  // Remove color from custom palette
+  const handleRemoveSavedColor = (e: React.MouseEvent, hexToRemove: string) => {
+    e.stopPropagation();
+    const next = savedColors.filter((c) => c.toUpperCase() !== hexToRemove.toUpperCase());
+    setSavedColors(next);
+    try {
+      localStorage.setItem(STORAGE_KEY_SAVED_COLORS, JSON.stringify(next));
+    } catch (_) {}
+  };
+
   // Compute handle coordinates on 2D area (percentages 0% to 100%)
   const satValX = (1 - hsv.s) * 100;
   const satValY = (1 - hsv.v) * 100;
@@ -287,73 +329,73 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
   const hueRatio = (360 - hsv.h) / 360;
   const hueThumbX = Math.max(0, Math.min(100, hueRatio * 100));
 
-  // Current RGB for display if format is RGB
+  // Current RGB for display
   const currentRgb = hsvToRgb(hsv.h, hsv.s, hsv.v);
+  const normalizedCurrentHex = (color.startsWith('#') ? color : `#${color}`).toUpperCase();
 
-  // Quick brand palette presets
-  const presets = [
-    '#701A45', // Mafogh Deep Magenta
-    '#9D174D', // Pink-800
-    '#BE185D', // Pink-700
-    '#4C0EC9', // User Indigo/Purple
-    '#3B82F6', // Blue
-    '#10B981', // Emerald
-    '#F59E0B', // Amber
-    '#EF4444', // Red
-    '#0F172A', // Slate-900
-    '#FFFFFF', // White
-  ];
+  const currentTheme = THEME_PALETTES.find((t) => t.id === selectedThemeId) || THEME_PALETTES[0];
 
   return (
     <div className="relative inline-block w-full" ref={containerRef}>
-      {/* Trigger Button: Swatch on the right, HEX code with # on its left, action on the far left */}
+      {/* Trigger Button */}
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex items-center justify-between bg-slate-800/80 hover:bg-slate-750 p-1.5 rounded-lg border border-slate-700/80 transition-all cursor-pointer shadow-sm group"
+        className="w-full flex items-center justify-between bg-slate-900/90 hover:bg-slate-800 p-1.5 rounded-lg border border-slate-700/80 transition-all cursor-pointer shadow-sm group"
       >
         <div className="flex items-center gap-2">
-          {/* Swatch square on the right */}
+          {/* Swatch square */}
           <div
-            className="w-6 h-6 rounded-md border border-white/20 shadow-inner shrink-0"
+            className="w-6 h-6 rounded-md border border-white/20 shadow-inner shrink-0 relative overflow-hidden"
             style={{ backgroundColor: color || '#ffffff' }}
-          />
-          {/* Hex code with fixed # on the left of digits */}
+          >
+            {normalizedCurrentHex === MAFOGH_BASE_COLOR && (
+              <span className="absolute inset-0 flex items-center justify-center text-[9px] text-white/90 font-bold">
+                ★
+              </span>
+            )}
+          </div>
+          {/* Hex code with fixed # */}
           <span
             dir="ltr"
             className="text-xs font-mono font-bold text-slate-200 uppercase tracking-wider inline-block"
           >
             #{hexDigits || 'FFFFFF'}
           </span>
+          {normalizedCurrentHex === MAFOGH_BASE_COLOR && (
+            <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#6B0B45]/40 text-pink-300 border border-[#6B0B45]/50 font-sans font-medium">
+              مافوق
+            </span>
+          )}
         </div>
         <span className="text-[11px] text-slate-400 group-hover:text-slate-200 flex items-center gap-0.5">
-          <span>تغییر</span>
+          <span>انتخاب رنگ</span>
           <ChevronDown size={12} className={`transition-transform ${isOpen ? 'rotate-180' : ''}`} />
         </span>
       </button>
 
-      {/* Floating Modern Color Picker Modal matching the User's Screenshot */}
+      {/* Floating Modern Color Picker Modal with Mafogh Brand Kit & Custom Palettes */}
       {isOpen && (
         <div
           dir="ltr"
-          style={{ width: '280px' }}
-          className={`absolute z-50 right-0 bg-[#000000] border border-neutral-800 rounded-2xl p-3.5 shadow-2xl backdrop-blur-xl animate-fadeIn select-none ${
+          style={{ width: '310px' }}
+          className={`absolute z-50 right-0 bg-[#090D16] border border-slate-800 rounded-2xl p-3.5 shadow-2xl backdrop-blur-xl animate-fadeIn select-none ${
             placement === 'top' ? 'bottom-full mb-2' : 'mt-2'
           }`}
         >
-          {/* 1. Large Saturation/Brightness 2D Area (No light border, pure seamless gradient) */}
+          {/* 1. Large Saturation/Brightness 2D Area */}
           <div
             ref={satValBoxRef}
             onMouseDown={handleSatValMouseDown}
             style={{
-              height: '140px',
+              height: '130px',
               backgroundColor: `hsl(${hsv.h}, 100%, 50%)`,
               backgroundImage: `
                 linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.4) 60%, #000000 98%, #000000 100%),
                 linear-gradient(to right, transparent 0%, #ffffff 100%)
               `,
             }}
-            className="w-full rounded-xl relative cursor-crosshair overflow-hidden"
+            className="w-full rounded-xl relative cursor-crosshair overflow-hidden border border-white/5 shadow-inner"
           >
             {/* Circular Handle */}
             <div
@@ -361,7 +403,7 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
                 left: `${satValX}%`,
                 top: `${satValY}%`,
               }}
-              className="absolute w-5 h-5 rounded-full border-2 border-white shadow-[0_0_4px_rgba(0,0,0,0.9)] -translate-x-1/2 -translate-y-1/2 pointer-events-none transition-transform active:scale-125"
+              className="absolute w-5 h-5 rounded-full border-2 border-white shadow-[0_0_6px_rgba(0,0,0,0.9)] -translate-x-1/2 -translate-y-1/2 pointer-events-none transition-transform active:scale-125"
             >
               <div
                 className="w-full h-full rounded-full"
@@ -370,8 +412,8 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
             </div>
           </div>
 
-          {/* 2. Rainbow Hue Spectrum Slider (Clean, borderless rainbow track) */}
-          <div className="mt-3.5 px-0.5">
+          {/* 2. Rainbow Hue Spectrum Slider */}
+          <div className="mt-3 px-0.5">
             <div
               ref={hueBarRef}
               onMouseDown={handleHueMouseDown}
@@ -380,7 +422,7 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
                 backgroundImage:
                   'linear-gradient(to right, #ff0000 0%, #ff00ff 17%, #0000ff 33%, #00ffff 50%, #00ff00 67%, #ffff00 83%, #ff0000 100%)',
               }}
-              className="w-full rounded-full relative cursor-pointer"
+              className="w-full rounded-full relative cursor-pointer border border-white/10"
             >
               {/* White Circular Thumb */}
               <div
@@ -394,16 +436,15 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
           </div>
 
           {/* 3. Format Dropdown & Editable Input Row */}
-          <div className="mt-4 flex items-center justify-between gap-2">
-            {/* Format Selector Button (HEX / RGB) */}
+          <div className="mt-3.5 flex items-center justify-between gap-2">
             <div className="flex items-center gap-1.5">
               <button
                 type="button"
                 onClick={() => setFormat(format === 'HEX' ? 'RGB' : 'HEX')}
-                className="px-2.5 py-1.5 bg-[#121620] hover:bg-slate-800 border border-slate-800 rounded-lg text-xs font-bold text-slate-200 flex items-center gap-1 cursor-pointer transition-colors shadow-sm"
+                className="px-2.5 py-1.5 bg-[#121826] hover:bg-slate-800 border border-slate-700/60 rounded-lg text-xs font-bold text-slate-200 flex items-center gap-1 cursor-pointer transition-colors shadow-sm"
                 title="تغییر فرمت نمایش"
               >
-                <span className="text-[10px] text-slate-400">▼</span>
+                <span className="text-[9px] text-slate-400">▼</span>
                 <span className="font-mono text-[11px]">{format}</span>
               </button>
 
@@ -411,7 +452,7 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
                 <button
                   type="button"
                   onClick={handleEyeDropper}
-                  className="p-1.5 bg-[#121620] hover:bg-slate-800 text-slate-400 hover:text-slate-200 rounded-lg border border-slate-800 cursor-pointer transition-colors"
+                  className="p-1.5 bg-[#121826] hover:bg-slate-800 text-slate-300 hover:text-white rounded-lg border border-slate-700/60 cursor-pointer transition-colors"
                   title="قطره‌چکان (انتخاب رنگ از صفحه)"
                 >
                   <Pipette size={13} />
@@ -419,12 +460,12 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
               )}
             </div>
 
-            {/* Editable Text Input with Permanent Fixed # Symbol */}
+            {/* Editable Text Input */}
             <div className="flex-1 max-w-[130px]">
               {format === 'HEX' ? (
                 <div
                   dir="ltr"
-                  className="flex items-center bg-[#121620] border border-slate-800 focus-within:border-indigo-500 rounded-lg px-2.5 py-1.5 shadow-inner"
+                  className="flex items-center bg-[#121826] border border-slate-700/60 focus-within:border-pink-500 rounded-lg px-2 py-1.5 shadow-inner"
                 >
                   <span className="font-mono text-xs font-black text-slate-400 select-none mr-1 shrink-0">
                     #
@@ -441,7 +482,7 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
               ) : (
                 <div
                   dir="ltr"
-                  className="text-[11px] font-mono text-slate-300 text-left bg-[#121620] border border-slate-800 px-2 py-1.5 rounded-lg truncate"
+                  className="text-[11px] font-mono text-slate-300 text-left bg-[#121826] border border-slate-700/60 px-2 py-1.5 rounded-lg truncate"
                 >
                   rgb({currentRgb.r}, {currentRgb.g}, {currentRgb.b})
                 </div>
@@ -449,27 +490,204 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
             </div>
           </div>
 
-          {/* 4. Quick Palette Presets */}
-          <div className="mt-3.5 pt-3 border-t border-slate-800/80">
-            <div className="text-[10px] text-slate-400 font-semibold mb-2 text-right dir-rtl">
-              رنگ‌های پرتکرار و سازمانی
+          {/* 4. Palette Tabs Header */}
+          <div className="mt-3.5 pt-2.5 border-t border-slate-800/90" dir="rtl">
+            <div className="flex items-center justify-between gap-1 bg-[#121826] p-1 rounded-xl border border-slate-800">
+              <button
+                type="button"
+                onClick={() => setActiveTab('mafogh')}
+                className={`flex-1 flex items-center justify-center gap-1.5 py-1 px-2 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
+                  activeTab === 'mafogh'
+                    ? 'bg-gradient-to-r from-[#6B0B45] to-[#A81970] text-white shadow-md'
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                <span>مافوق</span>
+                <span className="text-[10px] opacity-80 font-mono">۵۰-۹۰۰</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setActiveTab('themes')}
+                className={`flex-1 flex items-center justify-center gap-1 py-1 px-2 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
+                  activeTab === 'themes'
+                    ? 'bg-slate-700 text-white shadow-md'
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                <Palette size={12} />
+                <span>پالت‌ها</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setActiveTab('custom')}
+                className={`flex-1 flex items-center justify-center gap-1 py-1 px-2 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
+                  activeTab === 'custom'
+                    ? 'bg-slate-700 text-white shadow-md'
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                <Bookmark size={12} />
+                <span>شخصی</span>
+              </button>
             </div>
-            <div className="grid grid-cols-5 gap-1.5">
-              {presets.map((presetHex) => (
+
+            {/* TAB CONTENT 1: MAFOGH BRAND SCALE */}
+            {activeTab === 'mafogh' && (
+              <div className="mt-2.5">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-[#6B0B45] animate-pulse" />
+                    <span className="text-[11px] font-bold text-slate-200">
+                      کیت رنگ رسمی مافوق
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleSelectColor(MAFOGH_BASE_COLOR)}
+                    className="text-[10px] text-pink-400 hover:text-pink-300 hover:underline flex items-center gap-1 font-mono"
+                    title="انتخاب رنگ اصلی ۵۰۰"
+                  >
+                    <span>رنگ اصلی (#6B0B45)</span>
+                  </button>
+                </div>
+
+                {/* 10 Shades Grid (5 columns x 2 rows) */}
+                <div className="grid grid-cols-5 gap-1.5">
+                  {MAFOGH_BRAND_SCALE.map((item) => {
+                    const isSelected = normalizedCurrentHex === item.hex.toUpperCase();
+                    return (
+                      <button
+                        key={item.shade}
+                        type="button"
+                        onClick={() => handleSelectColor(item.hex)}
+                        style={{ backgroundColor: item.hex }}
+                        className={`h-9 rounded-lg border flex flex-col items-center justify-end p-1 transition-all hover:scale-105 active:scale-95 cursor-pointer relative group ${
+                          isSelected
+                            ? 'border-white ring-2 ring-pink-500 scale-105 shadow-lg'
+                            : 'border-white/10 hover:border-white/40'
+                        }`}
+                        title={`${item.name} (${item.hex})`}
+                      >
+                        {/* Base Badge indicator on 500 */}
+                        {item.isBase && (
+                          <span className="absolute top-0.5 right-0.5 w-1.5 h-1.5 rounded-full bg-amber-400 shadow-[0_0_4px_#F59E0B]" />
+                        )}
+
+                        {/* Shade label */}
+                        <span
+                          className={`text-[9px] font-mono font-bold leading-none select-none ${
+                            item.shade < 400 ? 'text-slate-900' : 'text-white'
+                          }`}
+                        >
+                          {item.shade}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* TAB CONTENT 2: THEME PALETTES */}
+            {activeTab === 'themes' && (
+              <div className="mt-2.5">
+                {/* Theme Selector Pills */}
+                <div className="flex gap-1 mb-2 overflow-x-auto pb-1 text-[10px]">
+                  {THEME_PALETTES.map((t) => (
+                    <button
+                      key={t.id}
+                      type="button"
+                      onClick={() => setSelectedThemeId(t.id)}
+                      className={`px-2 py-0.5 rounded-md shrink-0 transition-colors cursor-pointer ${
+                        selectedThemeId === t.id
+                          ? 'bg-slate-700 text-white font-bold'
+                          : 'bg-slate-800/60 text-slate-400 hover:text-slate-200'
+                      }`}
+                    >
+                      {t.label}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Swatches Grid */}
+                <div className="grid grid-cols-4 gap-1.5">
+                  {currentTheme.colors.map((hex) => {
+                    const isSelected = normalizedCurrentHex === hex.toUpperCase();
+                    return (
+                      <button
+                        key={hex}
+                        type="button"
+                        onClick={() => handleSelectColor(hex)}
+                        style={{ backgroundColor: hex }}
+                        className={`h-7 rounded-md border transition-all hover:scale-105 active:scale-95 cursor-pointer ${
+                          isSelected
+                            ? 'border-white ring-2 ring-indigo-500 scale-105 shadow-md'
+                            : 'border-white/10 hover:border-white/30'
+                        }`}
+                        title={hex}
+                      />
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* TAB CONTENT 3: USER SAVED PALETTE */}
+            {activeTab === 'custom' && (
+              <div className="mt-2.5">
+                {/* Add current color button */}
                 <button
-                  key={presetHex}
                   type="button"
-                  onClick={() => handleHexInputChange(presetHex)}
-                  style={{ backgroundColor: presetHex }}
-                  className={`h-5 rounded-md border transition-transform hover:scale-115 active:scale-95 cursor-pointer ${
-                    color?.toUpperCase() === presetHex
-                      ? 'border-white ring-2 ring-indigo-500/50 scale-105'
-                      : 'border-white/10'
-                  }`}
-                  title={presetHex}
-                />
-              ))}
-            </div>
+                  onClick={handleSaveCurrentColor}
+                  className="w-full mb-2 flex items-center justify-center gap-1.5 py-1.5 px-2 bg-gradient-to-r from-slate-800 to-slate-750 hover:from-slate-750 hover:to-slate-700 text-slate-200 border border-slate-700/80 rounded-lg text-[11px] font-bold cursor-pointer transition-all shadow-sm active:scale-98"
+                >
+                  <Plus size={13} className="text-pink-400" />
+                  <span>ذخیره رنگ جاری (#{hexDigits}) در پالت</span>
+                </button>
+
+                {/* Saved Swatches */}
+                {savedColors.length === 0 ? (
+                  <div className="text-center py-4 text-[11px] text-slate-500">
+                    هنوز رنگی ذخیره نشده است. با زدن دکمه بالا رنگ فعلی را اضافه کنید.
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-5 gap-1.5 max-h-[110px] overflow-y-auto p-0.5">
+                    {savedColors.map((hex) => {
+                      const isSelected = normalizedCurrentHex === hex.toUpperCase();
+                      return (
+                        <div
+                          key={hex}
+                          className="relative group rounded-md overflow-hidden"
+                        >
+                          <button
+                            type="button"
+                            onClick={() => handleSelectColor(hex)}
+                            style={{ backgroundColor: hex }}
+                            className={`w-full h-7 rounded-md border transition-all hover:scale-105 active:scale-95 cursor-pointer ${
+                              isSelected
+                                ? 'border-white ring-2 ring-pink-500 scale-105 shadow-md'
+                                : 'border-white/10 hover:border-white/30'
+                            }`}
+                            title={hex}
+                          />
+                          {/* Remove button on hover */}
+                          <button
+                            type="button"
+                            onClick={(e) => handleRemoveSavedColor(e, hex)}
+                            className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-600/90 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer shadow-md hover:bg-red-500"
+                            title="حذف از پالت"
+                          >
+                            <Trash2 size={9} />
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       )}
