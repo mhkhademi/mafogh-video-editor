@@ -37,6 +37,12 @@ namespace MafoghSetup
             this.BackColor = Color.FromArgb(15, 23, 42); // slate-900
             this.Font = new Font("Tahoma", 9F, FontStyle.Regular);
 
+            string icoPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"installer\mafogh.ico");
+            if (File.Exists(icoPath))
+            {
+                try { this.Icon = new Icon(icoPath); } catch {}
+            }
+
             InitComponents();
             ShowStep1();
         }
@@ -77,6 +83,22 @@ namespace MafoghSetup
 
             headerPanel.Controls.Add(titleLabel);
             headerPanel.Controls.Add(subTitleLabel);
+
+            string pngPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"installer\mafogh.png");
+            if (File.Exists(pngPath))
+            {
+                try
+                {
+                    PictureBox pic = new PictureBox();
+                    pic.Image = Image.FromFile(pngPath);
+                    pic.SizeMode = PictureBoxSizeMode.Zoom;
+                    pic.Size = new Size(54, 54);
+                    pic.Location = new Point(480, 13);
+                    pic.BackColor = Color.Transparent;
+                    headerPanel.Controls.Add(pic);
+                }
+                catch {}
+            }
 
             // Footer
             footerPanel = new Panel();
@@ -328,7 +350,16 @@ namespace MafoghSetup
             shortcut.WorkingDirectory = workingDir;
             shortcut.Description = description;
 
-            if (File.Exists(@"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe"))
+            string customIcon = Path.Combine(workingDir, @"installer\mafogh.ico");
+            if (File.Exists(customIcon))
+            {
+                shortcut.IconLocation = customIcon + ",0";
+            }
+            else if (File.Exists(targetPath))
+            {
+                shortcut.IconLocation = targetPath + ",0";
+            }
+            else if (File.Exists(@"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe"))
             {
                 shortcut.IconLocation = @"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe,0";
             }
