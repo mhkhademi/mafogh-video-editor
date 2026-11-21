@@ -229,6 +229,113 @@ app.post('/api/export/cancel', (req, res) => {
   res.json({ ok: true });
 });
 
+// ==========================================
+// SYSTEM AUTO-UPDATE & SYNC ENDPOINTS
+// ==========================================
+
+function runGit(args: string[]): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const proc = spawn('git', args, { cwd: path.join(__dirname, '..') });
+    let stdout = '';
+    let stderr = '';
+    proc.stdout.on('data', (d) => (stdout += d.toString()));
+    proc.stderr.on('data', (d) => (stderr += d.toString()));
+    proc.on('close', (code) => {
+      if (code === 0) resolve(stdout.trim());
+      else reject(new Error(stderr.trim() || stdout.trim() || `git exited with code ${code}`));
+    });
+    proc.on('error', (err) => reject(err));
+  });
+}
+
+// 1. Check for remote updates
+app.get('/api/updates/check', async (_req, res) => {
+  try {
+    const currentHash = await runGit(['rev-parse', 'HEAD']);
+    const currentShort = await runGit(['rev-parse', '--short', 'HEAD']);
+
+    // Fetch latest remote commits from origin/main
+    try {
+      await runGit(['fetch', 'origin', 'main']);
+    } catch (fetchErr: any) {
+      console.warn('[Update Check] Git fetch failed (probably offline):', fetchErr.message);
+      return res.json({
+        hasUpdate: false,
+        isForce: false,
+        isOffline: true,
+        current: { hash: currentHash, short: currentShort },
+        latest: null,
+      });
+    }
+
+    const remoteHash = await runGit(['rev-parse', 'origin/main']);
+    const remoteShort = await runGit(['rev-parse', '--short', 'origin/main']);
+
+    const hasUpdate = currentHash !== remoteHash;
+
+    let latestMessage = '';
+    let latestAuthor = '';
+    let latestDate = '';
+    let isForce = false;
+
+    if (hasUpdate) {
+      latestMessage = await runGit(['log', '-1', 'origin/main', '--pretty=%B']);
+      latestAuthor = await runGit(['log', '-1', 'origin/main', '--pretty=%an']);
+      latestDate = await runGit(['log', '-1', 'origin/main', '--pretty=%cr']);
+
+      // Check if any unmerged commit contains force keywords
+      const unmergedMessages = await runGit(['log', 'HEAD..origin/main', '--pretty=%B']);
+      const lower = unmergedMessages.toLowerCase();
+      isForce =
+        lower.includes('[force]') ||
+        lower.includes('[critical]') ||
+        lower.includes('[اجباری]') ||
+        lower.includes('force-update');
+    }
+
+    res.json({
+      hasUpdate,
+      isForce,
+      isOffline: false,
+      current: { hash: currentHash, short: currentShort },
+      latest: hasUpdate
+        ? {
+            hash: remoteHash,
+            short: remoteShort,
+            message: latestMessage.trim(),
+            author: latestAuthor.trim(),
+            date: latestDate.trim(),
+          }
+        : null,
+    });
+  } catch (err: any) {
+    console.error('[Update Check Error]:', err);
+    res.status(500).json({ error: 'Failed to check updates', details: err.message });
+  }
+});
+
+// 2. Apply and pull updates
+app.post('/api/updates/apply', async (_req, res) => {
+  try {
+    console.log('[System Update] Pulling latest changes from origin/main...');
+    const pullOutput = await runGit(['pull', 'origin', 'main']);
+    console.log('[System Update] Git pull output:', pullOutput);
+
+    const newHash = await runGit(['rev-parse', 'HEAD']);
+    const newShort = await runGit(['rev-parse', '--short', 'HEAD']);
+
+    res.json({
+      success: true,
+      newHash,
+      newShort,
+      output: pullOutput,
+    });
+  } catch (err: any) {
+    console.error('[System Update Error]:', err);
+    res.status(500).json({ error: 'Failed to pull updates', details: err.message });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`Video Editor API Server running at http://localhost:${PORT}`);
   console.log(`FFmpeg binary located at: ${getFFmpegPath()}`);

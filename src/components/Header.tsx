@@ -13,6 +13,8 @@ interface HeaderProps {
   onOpenExportModal: () => void;
   onImportProject: (imported: Project) => void;
   onSelectAspectRatio?: (ratio: AspectRatioType) => void;
+  hasUpdate?: boolean;
+  onOpenUpdateModal?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -26,6 +28,8 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenExportModal,
   onImportProject,
   onSelectAspectRatio,
+  hasUpdate = false,
+  onOpenUpdateModal,
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -228,6 +232,18 @@ export const Header: React.FC<HeaderProps> = ({
         </button>
 
         <div className="h-6 w-px bg-slate-800"></div>
+
+        {/* Update Notification Pill */}
+        {hasUpdate && (
+          <button
+            onClick={onOpenUpdateModal}
+            className="px-3 py-1.5 bg-gradient-to-r from-pink-600 via-rose-600 to-indigo-600 hover:from-pink-500 hover:to-indigo-500 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-lg shadow-pink-600/30 animate-pulse transition-all transform hover:scale-105 active:scale-95 cursor-pointer border border-pink-400/40"
+            title="نسخه جدید آماده نصب است، کلیک کنید"
+          >
+            <Sparkles size={14} className="text-amber-300" />
+            <span>به‌روزرسانی جدید</span>
+          </button>
+        )}
 
         {/* Export MP4 Video Button */}
         <button

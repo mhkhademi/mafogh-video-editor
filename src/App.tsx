@@ -8,6 +8,8 @@ import { PropertiesPanel } from './components/PropertiesPanel';
 import { TimelineBar } from './components/TimelineBar';
 import { ExportModal } from './components/ExportModal';
 import { IconPickerModal } from './components/IconPickerModal';
+import { UpdateModal } from './components/UpdateModal';
+import { useUpdateManager } from './hooks/useUpdateManager';
 
 export const App: React.FC = () => {
   const {
@@ -51,6 +53,18 @@ export const App: React.FC = () => {
   const [isExportModalOpen, setIsExportModalOpen] = useState<boolean>(false);
   const [isIconPickerOpen, setIsIconPickerOpen] = useState<boolean>(false);
   const [iconPickerMode, setIconPickerMode] = useState<'new' | 'replace'>('new');
+
+  // Intelligent In-App Auto-Update Manager
+  const {
+    updateInfo,
+    isUpdating,
+    isModalOpen: isUpdateModalOpen,
+    updateStatus,
+    updateError,
+    applyUpdate,
+    openModal: openUpdateModal,
+    closeModal: closeUpdateModal,
+  } = useUpdateManager();
 
   const handleSelectIcon = (config: {
     iconName: string;
@@ -216,6 +230,8 @@ export const App: React.FC = () => {
         onResetTemplate={resetToTemplate}
         onOpenExportModal={() => setIsExportModalOpen(true)}
         onSelectAspectRatio={setAspectRatio}
+        hasUpdate={Boolean(updateInfo?.hasUpdate)}
+        onOpenUpdateModal={openUpdateModal}
         onImportProject={(imported) => {
           setProject(imported);
           if (imported.slides?.[0]?.id) {
@@ -336,6 +352,17 @@ export const App: React.FC = () => {
             : '#6b0b45'
         }
         isReplacing={iconPickerMode === 'replace'}
+      />
+
+      {/* Auto-Update & Version Synchronization Modal */}
+      <UpdateModal
+        isOpen={isUpdateModalOpen}
+        onClose={closeUpdateModal}
+        updateInfo={updateInfo}
+        onApplyUpdate={applyUpdate}
+        isUpdating={isUpdating}
+        updateStatus={updateStatus}
+        updateError={updateError}
       />
     </div>
   );
