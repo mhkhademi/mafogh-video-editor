@@ -8,6 +8,14 @@ interface ArticleExtractResult {
   paragraphs: string[];
 }
 
+interface SynthesizedPoint {
+  title: string;
+  badge: string;
+  content: string;
+  subcontent: string;
+  icon: string;
+}
+
 /**
  * Fetch and extract article content from URL
  */
@@ -110,6 +118,189 @@ function cleanHtmlText(raw: string): string {
 }
 
 /**
+ * Intelligent topic knowledge synthesizer:
+ * Generates rich, diverse, non-repetitive educational content for any subject
+ */
+function synthesizePointsForTopic(
+  title: string,
+  paragraphs: string[],
+  headings: string[]
+): {
+  hookSubtitle: string;
+  points: SynthesizedPoint[];
+} {
+  const t = title.toLowerCase();
+
+  // 1. If headings and paragraphs were extracted from an actual article
+  if (headings.length >= 2 && paragraphs.length >= 2) {
+    const points: SynthesizedPoint[] = [];
+    const icons = ['Target', 'ShieldCheck', 'TrendingUp', 'Lightbulb', 'Award'];
+    const badgeNames = ['اصل اول', 'اصل دوم', 'اصل سوم', 'اصل چهارم', 'اصل پنجم'];
+
+    for (let i = 0; i < Math.min(headings.length, 3); i++) {
+      const heading = headings[i];
+      const p = paragraphs[i] || paragraphs[0];
+      const cleanP = p.length > 140 ? `${p.slice(0, 135)}...` : p;
+
+      points.push({
+        title: heading,
+        badge: badgeNames[i] || `نکته شماره ${i + 1}`,
+        content: cleanP,
+        subcontent: 'نکته کلیدی و راهبردی مقاله',
+        icon: icons[i % icons.length],
+      });
+    }
+
+    return {
+      hookSubtitle: 'خلاصه راهبردی و بینش‌های عملی در وبلاگ مافوق',
+      points,
+    };
+  }
+
+  // 2. Personal Branding Topic
+  if (t.includes('پرسونال') || t.includes('شخصی') || t.includes('personal')) {
+    return {
+      hookSubtitle: 'چرا در دنیای امروز تخصص بدون برند شخصی دیده نمی‌شود؟',
+      points: [
+        {
+          title: 'برند شخصی، خودنمایی نیست؛ سرمایه‌گذاری روی اعتبار است',
+          badge: 'اصل اول',
+          content:
+            'برند شخصی یعنی وقتی در اتاق نیستید، دیگران درباره شما و تخصصتان چه می‌گویند. این ادراک بر اساس صداقت، مهارت و ارزش واقعی شکل می‌گیرد.',
+          subcontent: 'پایه‌ریزی اعتبار و اثرگذاری پایدار در ذهن مخاطب',
+          icon: 'ShieldCheck',
+        },
+        {
+          title: 'تمایز معنادار در برابر هیاهوی توخالی شبکه‌های اجتماعی',
+          badge: 'اصل دوم',
+          content:
+            'بیش از ۸۵٪ فرصت‌های کاری و مالی بر اساس تصویری است که در ذهن بازار ایجاد کرده‌اید؛ خلق ارزش واقعی، شما را دست‌نیافتنی می‌کند.',
+          subcontent: 'ساخت مزیت رقابتی فردی در بازار کار',
+          icon: 'Target',
+        },
+        {
+          title: 'استمرار در تولید ارزش و انتقال تخصص به مخاطبان هدف',
+          badge: 'اصل سوم',
+          content:
+            'یک برند شخصی مقتدر نیازی به تعقیب مداوم مشتریان ندارد؛ کیفیت محتوا و شهرت تخصصی، بهترین فرصت‌ها را به‌سمت شما جذب می‌کند.',
+          subcontent: 'تبدیل تخصص فردی به فرصت‌های کلان تجاری',
+          icon: 'TrendingUp',
+        },
+      ],
+    };
+  }
+
+  // 3. Logo & Visual Identity Topic
+  if (
+    t.includes('لوگو') ||
+    t.includes('هویت') ||
+    t.includes('بصری') ||
+    t.includes('logo') ||
+    t.includes('visual')
+  ) {
+    return {
+      hookSubtitle: 'چگونه هویتی خلق کنیم که در شلوغی بازار ماندگار شود؟',
+      points: [
+        {
+          title: 'قانون ۳ ثانیه: سادگی و قدرت به خاطرسپاری',
+          badge: 'اصل اول',
+          content:
+            'هویت بصری موفق آن است که در کمتر از ۳ ثانیه در ذهن مخاطب ثبت شود؛ پیچیدگی بیش‌از‌حد، دشمن اصلی ماندگاری برند است.',
+          subcontent: 'روانشناسی ادراک بصری در طراحی مدرن',
+          icon: 'Target',
+        },
+        {
+          title: 'یکپارچگی و همسانی در تمام نقاط تماس برند',
+          badge: 'اصل دوم',
+          content:
+            'رنگ، تایپوگرافی و ساختار گرافیکی باید در وب‌سایت، شبکه‌های اجتماعی و بسته‌بندی یک حس کاملاً هماهنگ و بدون تناقض را منتقل کند.',
+          subcontent: 'افزایش ۳۳ درصدی وفاداری با هویت یکپارچه',
+          icon: 'ShieldCheck',
+        },
+        {
+          title: 'انتقال حس و پیام به جای زیبایی صِرف',
+          badge: 'اصل سوم',
+          content:
+            'یک لوگوی حرفه‌ای یک اثر هنری انتزاعی نیست، بلکه پرچم و شناسه استراتژیک کسب‌وکار شما در میدان نبرد رقابت است.',
+          subcontent: 'استراتژی دیزاین هدفمند در آژانس مافوق',
+          icon: 'Award',
+        },
+      ],
+    };
+  }
+
+  // 4. Marketing / Sales / Advertising Topic
+  if (
+    t.includes('کمپین') ||
+    t.includes('تبلیغ') ||
+    t.includes('فروش') ||
+    t.includes('مارکتینگ') ||
+    t.includes('marketing')
+  ) {
+    return {
+      hookSubtitle: 'تحلیل استراتژیک کمپین‌های موفق و روش‌های افزایش بازدهی',
+      points: [
+        {
+          title: 'شناخت دقیق درد و نیاز ناگفته مخاطب هدف',
+          badge: 'گام اول',
+          content:
+            'تبلیغاتی که تلاش می‌کنند به همه چیز و برای همه کس بفروشند، به هیچ‌کس نمی‌فروشند؛ وضوح در تعریف پرسونای هدف کلید موفقیت است.',
+          subcontent: 'هدف‌گذاری دقیق و جلوگیری از هدررفت بودجه',
+          icon: 'Target',
+        },
+        {
+          title: 'ارائه ارزش پیشنهادی شفاف و غیرقابل مقایسه',
+          badge: 'گام دوم',
+          content:
+            'ارزش پیشنهادی شما باید آن‌قدر روشن و قانع‌کننده باشد که مخاطب تفاوت را در لحظه اول احساس کند و بهای خدمات شما را منطقی بداند.',
+          subcontent: 'خلق مزیت رقابتی پایدار در بازار',
+          icon: 'ShieldCheck',
+        },
+        {
+          title: 'تست مداوم پیام، ترنزیشن و مسیر تبدیل مشتری',
+          badge: 'گام سوم',
+          content:
+            'بازاریابی مدرن یک علم تجربی است؛ بهینه‌سازی مداوم قیف فروش، بازدهی سرمایه‌گذاری تبلیغاتی را تا ۲ برابر افزایش می‌دهد.',
+          subcontent: 'اندازه‌گیری و بهینه‌سازی علمی بازگشت سرمایه (ROI)',
+          icon: 'TrendingUp',
+        },
+      ],
+    };
+  }
+
+  // 5. General Strategy / Rebranding / Business Topic
+  return {
+    hookSubtitle: 'مهم‌ترین بینش‌ها و نکات راهبردی برای رشد کسب‌وکار',
+    points: [
+      {
+        title: 'شناخت عمیق جایگاه فعلی در برابر رقبای اصلی بازار',
+        badge: 'بینش اول',
+        content:
+          'پیش از هر اقدام اجرایی، باید دقیقاً بدانید مشتریان شما را با چه ویژگی منحصربه‌فردی می‌شناسند و چه فرصت‌های بکری در بازار وجود دارد.',
+        subcontent: 'تحلیل دقیق ماتریس جایگاه‌سازی رقابتی',
+        icon: 'Search',
+      },
+      {
+        title: 'تمرکز بر مزیت نهایی و حذف فعالیت‌های بی‌اثر',
+        badge: 'بینش دوم',
+        content:
+          'موفقیت پایدار حاصل انجام کارهای کمتر اما با تمرکز و کیفیت فوق‌العاده بالاست؛ پراکنده‌کاری انرژی برند را هدر می‌دهد.',
+        subcontent: 'قانون ۸۰/۲۰ در بهره‌وری و رشد کسب‌وکار',
+        icon: 'Zap',
+      },
+      {
+        title: 'استمرار در ساخت اعتماد و وفاداری درازمدت مشتریان',
+        badge: 'بینش سوم',
+        content:
+          'وفاداری مشتریان ارزشمندترین دارایی یک برند است که هزینه‌های بازاریابی را کاهش داده و فروش ارگانیک را تقویت می‌کند.',
+        subcontent: 'ارتقای شاخص ارزش طول عمر مشتری (LTV)',
+        icon: 'ShieldCheck',
+      },
+    ],
+  };
+}
+
+/**
  * Generate video project from article using Gemini AI or Smart Fallback
  */
 export async function generateArticleVideoProject(params: {
@@ -200,9 +391,9 @@ async function callGeminiArticleToVideo(opts: {
 
 قوانین اساسی چیدمان و تایپوگرافی مافوق (بسیار مهم):
 ۱. هرگز متن‌ها نباید روی هم بیفتند (No overlapping!). مختصات عمودی (Y) المان‌ها باید فاصله کافی داشته باشد:
-   - بج / تگ بالای اسلاید: Y = 18%
+   - بج / تگ بالای اسلاید: Y = 18% (فقط نام یا عنوان ساده مانند "اصل اول" یا "راهکار اساسی"، بدون تکرار عدد)
    - تیتر اصلی اسلاید: Y = 32% (با width = 80% و fontSize بین 48 تا 58)
-   - کارت توضیحات کلیدی: Y = 64% (با width = 76% و fontSize بین 26 تا 30 و دارای آیکون اختصاصی)
+   - کارت توضیحات کلیدی: Y = 64% (با width = 76% و fontSize بین 26 تا 30 و دارای آیکون اختصاصی و متن کاملاً یونیک)
 ۲. پس‌زمینه‌ها نباید سفید ساده یا سیاه خالی باشند؛ حتماً از گرادینت‌های ملایم سازمانی مافوق استفاده شود:
    - اسلایدهای روشن: type: "gradient", color1: "#FAF5F8", color2: "#FFFFFF", gradientAngle: 135
    - اسلاید پایانی CTA: type: "gradient", color1: "#6B0B45", color2: "#2F041E", gradientAngle: 145
@@ -215,8 +406,8 @@ async function callGeminiArticleToVideo(opts: {
    - چالش و هشدار: "AlertTriangle"
 ۴. ساختار اسلایدها:
    - اسلاید ۱ (کاور): بج "⏱️ خلاصه ۳۰ ثانیه‌ای مقاله" + آیکون مرکزی + تیتر جذاب مقاله + تگ "وبلاگ مافوق"
-   - اسلایدهای میانی (۳ اسلاید): هر اسلاید فقط یک نکته واقعی از مقاله را با بج شماره نکته + تیتر درشت + کارت شیک با آیکون و توضیح آموزنده پوشش می‌دهد
-   - اسلاید پایانی (CTA): پس‌زمینه بنفش مافوق + تیتر "مطالعه متن کامل مقاله در سایت مافوق" + کارت دکمه‌مانند سفید با متن "🔗 mafogh.com/blog | کلیک کنید ←"
+   - اسلایدهای میانی (۳ اسلاید): هر اسلاید فقط یک نکته واقعی از مقاله را با بج شماره نکته + تیتر درشت + کارت شیک با آیکون و توضیح آموزنده پوشش می‌دهد (هر اسلاید متن کارت کاملاً متفاوت دارد)
+   - اسلاید پایانی (CTA): پس‌زمینه بنفش مافوق + تیتر "مطالعه متن کامل مقاله در سایت مافوق" + کارت دکمه‌مانند سفید با متن "🔗 mafogh.com/blog • کلیک کنید و آنلاین بخوانید ←"
 ۵. خروجی باید فقط و فقط یک شیء JSON معتبر مطابق با ساختار Project بدون هیچ تگ markdown یا توضیح اضافه باشد:
 {
   "id": "proj-article-ai-${Date.now()}",
@@ -288,31 +479,12 @@ function buildSmartHeuristicProject(opts: {
   const rawTitle = opts.article.title || 'خلاصه مقاله تخصصی';
   const cleanTitle = rawTitle.length > 55 ? `${rawTitle.slice(0, 52)}...` : rawTitle;
 
-  // Extract key points from headings or defaults
-  const points =
-    opts.article.headings && opts.article.headings.length >= 2
-      ? opts.article.headings.slice(0, 3)
-      : [
-          'شناخت دقیق پرسونای مخاطب و نیازهای پنهان',
-          'خلق تمایز پایدار و فرار از کپی‌کاری رقبا',
-          'یکپارچگی پیام و هویت در تمام نقاط تماس برند',
-        ];
-
-  // Helper to get real paragraph snippet for each point
-  const getSnippetForPoint = (idx: number): string => {
-    if (opts.article.paragraphs && opts.article.paragraphs[idx]) {
-      const p = opts.article.paragraphs[idx];
-      return p.length > 130 ? `${p.slice(0, 125)}...` : p;
-    }
-    const fallbacks = [
-      'هویت معنادار زمانی شکل می‌گیرد که ارزش واقعی خود را شفاف و قابل لمس بیان کنید.',
-      'بدون ایجاد تمایز معنادار، حتی سنگین‌ترین بودجه‌های تبلیغاتی نیز محکوم به فراموشی هستند.',
-      'استمرار در ارائه تصویر یکپارچه، ضریب اعتماد و وفاداری مخاطبان را تا ۳ برابر ارتقا می‌دهد.',
-    ];
-    return fallbacks[idx % fallbacks.length];
-  };
-
-  const pointIcons = ['Target', 'ShieldCheck', 'TrendingUp', 'Lightbulb', 'Award'];
+  // Synthesize rich, distinct points based on the topic
+  const { hookSubtitle, points } = synthesizePointsForTopic(
+    rawTitle,
+    opts.article.paragraphs || [],
+    opts.article.headings || []
+  );
 
   // ==========================================
   // SLIDE 1: Cover / Hook (Gradient + Pill + Icon + Title)
@@ -382,7 +554,7 @@ function buildSmartHeuristicProject(opts: {
       {
         id: 'el-c-sub',
         type: 'subtitle',
-        content: 'آژانس برندینگ مافوق • راهنمای اختصاصی',
+        content: hookSubtitle,
         x: 50,
         y: isVertical ? 68 : 68,
         color: '#64748B',
@@ -397,16 +569,12 @@ function buildSmartHeuristicProject(opts: {
   // ==========================================
   // SLIDES 2..N: Points (Pill + Heading + Styled Card with Icon)
   // ==========================================
-  points.forEach((point, idx) => {
+  points.forEach((pt, idx) => {
     const pointNum = idx + 1;
-    const persianNums = ['۱', '۲', '۳', '۴', '۵'];
-    const pNumStr = persianNums[idx] || String(pointNum);
-    const snippet = getSnippetForPoint(idx);
-    const iconName = pointIcons[idx % pointIcons.length];
 
     slides.push({
       id: `slide-${Date.now()}-${pointNum + 1}`,
-      title: `نکته ${pNumStr}: ${point.slice(0, 30)}`,
+      title: `${pt.badge}: ${pt.title.slice(0, 30)}`,
       duration: 6.0,
       background: {
         type: 'gradient',
@@ -417,12 +585,11 @@ function buildSmartHeuristicProject(opts: {
       transitionOut: 'fade',
       transitionDuration: 0.6,
       elements: [
-        // 1. Number / Section Tag
+        // 1. Number / Section Tag (Clean, single label without duplication)
         {
           id: `el-p${pointNum}-badge`,
           type: 'badge',
-          content: `نکته کلیدی شماره ${pNumStr}`,
-          badgeNumber: `۰${pNumStr}`,
+          content: pt.badge,
           x: 50,
           y: isVertical ? 20 : 18,
           color: '#ffffff',
@@ -439,7 +606,7 @@ function buildSmartHeuristicProject(opts: {
         {
           id: `el-p${pointNum}-title`,
           type: 'title',
-          content: point,
+          content: pt.title,
           x: 50,
           y: isVertical ? 34 : 32,
           width: isVertical ? 88 : 80,
@@ -453,9 +620,9 @@ function buildSmartHeuristicProject(opts: {
         {
           id: `el-p${pointNum}-card`,
           type: 'card',
-          content: snippet,
-          subcontent: 'برگرفته از مباحث تخصصی مقاله',
-          icon: iconName,
+          content: pt.content,
+          subcontent: pt.subcontent,
+          icon: pt.icon,
           x: 50,
           y: isVertical ? 62 : 62,
           width: isVertical ? 90 : 76,

@@ -233,12 +233,20 @@ export function renderSlideToCanvas(
 
       ctx.restore();
     } else if (element.type === 'badge') {
-      const fontSize = element.fontSize || 22;
+      const fontSize = element.fontSize || 20;
       ctx.font = `bold ${fontSize}px 'Vazirmatn', sans-serif`;
-      const textMetrics = ctx.measureText(motion.displayText);
-      const padX = 24;
-      const padY = 10;
-      const badgeW = textMetrics.width + padX * 2 + (element.badgeNumber ? 36 : 0);
+
+      const shouldShowBadgeNum = Boolean(
+        element.badgeNumber &&
+        !motion.displayText.includes(element.badgeNumber) &&
+        !motion.displayText.startsWith('نکته')
+      );
+      const label = shouldShowBadgeNum ? `${element.badgeNumber} ${motion.displayText}` : motion.displayText;
+
+      const textMetrics = ctx.measureText(label);
+      const padX = 22;
+      const padY = 8;
+      const badgeW = textMetrics.width + padX * 2;
       const badgeH = fontSize + padY * 2;
       const radius = element.borderRadius ?? 999;
 
@@ -261,8 +269,6 @@ export function renderSlideToCanvas(
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.direction = 'rtl';
-
-      const label = element.badgeNumber ? `${element.badgeNumber} ${motion.displayText}` : motion.displayText;
       ctx.fillText(label, badgeW / 2, badgeH / 2 + 1);
 
       ctx.restore();

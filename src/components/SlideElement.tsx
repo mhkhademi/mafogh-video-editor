@@ -296,23 +296,30 @@ export const SlideElement: React.FC<SlideElementProps> = ({
 
       case 'badge': {
         const IconComponent = element.icon ? getLucideIcon(element.icon) : null;
+        // Don't show badgeNumber if it's already included inside textToShow or if text starts with نکته
+        const shouldShowBadgeNum = Boolean(
+          element.badgeNumber &&
+          !textToShow.includes(element.badgeNumber) &&
+          !textToShow.startsWith('نکته')
+        );
+
         return (
           <div
-            className="inline-flex items-center gap-2.5 border shadow-md select-none whitespace-nowrap transition-all"
+            className="inline-flex items-center gap-2 border shadow-sm select-none whitespace-nowrap transition-all"
             style={{
               backgroundColor: element.backgroundColor || '#FBF4F8',
               borderColor: element.borderColor || '#EABAD7',
               color: element.color || '#6B0B45',
               borderRadius: `${element.borderRadius ?? 999}px`,
-              padding: `${element.padding ? element.padding / 2 : 10}px 24px`,
-              fontSize: `${element.fontSize || 22}px`,
+              padding: `${element.padding ? element.padding / 2 : 8}px 22px`,
+              fontSize: `${element.fontSize || 20}px`,
               fontWeight: element.fontWeight || '700',
             }}
           >
-            {element.badgeNumber && (
-              <span className="font-mono font-black opacity-90">{element.badgeNumber}</span>
+            {shouldShowBadgeNum && (
+              <span className="font-mono font-bold ml-1 opacity-90">{element.badgeNumber}</span>
             )}
-            {IconComponent && <IconComponent size={(element.fontSize || 22) * 0.9} strokeWidth={2.5} />}
+            {IconComponent && <IconComponent size={(element.fontSize || 20) * 0.9} strokeWidth={2.5} />}
             <span>{textToShow}</span>
           </div>
         );
