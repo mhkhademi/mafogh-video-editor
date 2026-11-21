@@ -1,6 +1,7 @@
-import React, { useRef } from 'react';
-import { Video, Download, Upload, Sparkles, Film, FileDown, Monitor, Smartphone, Square, RectangleVertical, Undo2, Redo2 } from 'lucide-react';
+import React, { useRef, useState, useEffect } from 'react';
+import { Video, Download, Upload, Sparkles, Film, FileDown, Monitor, Smartphone, Square, RectangleVertical, Undo2, Redo2, ChevronDown, BookOpen, Layers } from 'lucide-react';
 import { Project, AspectRatioType } from '../types';
+import { articleTipsTemplate, articleProblemSolutionTemplate } from '../templates/articleTemplates';
 
 interface HeaderProps {
   project: Project;
@@ -10,6 +11,8 @@ interface HeaderProps {
   onRedo?: () => void;
   onUpdateTitle: (title: string) => void;
   onResetTemplate: () => void;
+  onSelectTemplate?: (template: Project) => void;
+  onOpenArticleModal?: () => void;
   onOpenExportModal: () => void;
   onImportProject: (imported: Project) => void;
   onSelectAspectRatio?: (ratio: AspectRatioType) => void;
@@ -25,6 +28,8 @@ export const Header: React.FC<HeaderProps> = ({
   onRedo,
   onUpdateTitle,
   onResetTemplate,
+  onSelectTemplate,
+  onOpenArticleModal,
   onOpenExportModal,
   onImportProject,
   onSelectAspectRatio,
@@ -32,6 +37,18 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenUpdateModal,
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isTemplatesOpen, setIsTemplatesOpen] = useState(false);
+  const templatesRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (templatesRef.current && !templatesRef.current.contains(e.target as Node)) {
+        setIsTemplatesOpen(false);
+      }
+    };
+    window.addEventListener('mousedown', handleClickOutside);
+    return () => window.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const handleExportJSON = () => {
     const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(project, null, 2));
@@ -196,15 +213,85 @@ export const Header: React.FC<HeaderProps> = ({
 
       {/* Action Buttons */}
       <div className="flex items-center gap-3">
-        {/* Reset / Load Sample Template */}
+        {/* AI Article-to-Video Button */}
         <button
-          onClick={onResetTemplate}
-          className="px-3 py-1.5 bg-slate-900 hover:bg-slate-850 border border-slate-800 text-slate-300 hover:text-slate-100 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer"
-          title="بارگذاری نمونه ویدیوی LTV"
+          onClick={onOpenArticleModal}
+          className="px-3.5 py-1.5 bg-gradient-to-r from-[#6B0B45] via-[#A81970] to-[#D73697] hover:brightness-110 text-white rounded-xl text-xs font-extrabold flex items-center gap-2 shadow-lg shadow-pink-950/40 border border-pink-400/40 transition-all hover:scale-102 active:scale-95 cursor-pointer"
+          title="تبدیل هوشمند مقالات وب‌سایت به ویدیو با هوش مصنوعی"
         >
-          <Sparkles size={14} className="text-amber-400" />
-          <span>قالب نمونه LTV</span>
+          <Sparkles size={14} className="text-pink-200 animate-pulse" />
+          <span>تولید ویدیو از مقاله ✨</span>
         </button>
+
+        {/* Templates Dropdown */}
+        <div className="relative" ref={templatesRef}>
+          <button
+            onClick={() => setIsTemplatesOpen(!isTemplatesOpen)}
+            className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-white rounded-lg text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer"
+            title="انتخاب از قالب‌های آماده ویدیو"
+          >
+            <BookOpen size={13} className="text-pink-400" />
+            <span>قالب‌های آماده</span>
+            <ChevronDown size={12} className={`transition-transform ${isTemplatesOpen ? 'rotate-180' : ''}`} />
+          </button>
+
+          {isTemplatesOpen && (
+            <div
+              dir="rtl"
+              className="absolute left-0 mt-2 w-64 bg-[#0d121f] border border-slate-800 rounded-xl shadow-2xl p-1.5 z-50 animate-fadeIn"
+            >
+              <div className="text-[10px] text-slate-400 font-bold px-2 py-1 border-b border-slate-800/80 mb-1">
+                قالب‌های استاندارد مقالات مافوق
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  if (onSelectTemplate) {
+                    onSelectTemplate(articleTipsTemplate);
+                  } else {
+                    onImportProject(articleTipsTemplate);
+                  }
+                  setIsTemplatesOpen(false);
+                }}
+                className="w-full text-right p-2 rounded-lg hover:bg-slate-800/80 text-xs text-slate-200 flex flex-col gap-0.5 cursor-pointer transition-colors"
+              >
+                <span className="font-bold text-pink-300">📌 ۳ نکته کلیدی مقاله (Tips)</span>
+                <span className="text-[10px] text-slate-400">کاور + ۳ اسلاید نکته + اسلاید CTA</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  if (onSelectTemplate) {
+                    onSelectTemplate(articleProblemSolutionTemplate);
+                  } else {
+                    onImportProject(articleProblemSolutionTemplate);
+                  }
+                  setIsTemplatesOpen(false);
+                }}
+                className="w-full text-right p-2 rounded-lg hover:bg-slate-800/80 text-xs text-slate-200 flex flex-col gap-0.5 cursor-pointer transition-colors"
+              >
+                <span className="font-bold text-amber-300">⚖️ چالش و راه‌حل (Problem & Solution)</span>
+                <span className="text-[10px] text-slate-400">قلاب + ریشه مشکل + راهکار مافوق + CTA</span>
+              </button>
+
+              <div className="h-px bg-slate-800/80 my-1" />
+
+              <button
+                type="button"
+                onClick={() => {
+                  onResetTemplate();
+                  setIsTemplatesOpen(false);
+                }}
+                className="w-full text-right p-2 rounded-lg hover:bg-slate-800/80 text-xs text-slate-200 flex flex-col gap-0.5 cursor-pointer transition-colors"
+              >
+                <span className="font-bold text-slate-300">📊 قالب نمونه LTV</span>
+                <span className="text-[10px] text-slate-400">پرزنتیشن آموزشی کامل شاخص LTV</span>
+              </button>
+            </div>
+          )}
+        </div>
 
         {/* Import JSON */}
         <input

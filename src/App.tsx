@@ -9,6 +9,7 @@ import { TimelineBar } from './components/TimelineBar';
 import { ExportModal } from './components/ExportModal';
 import { IconPickerModal } from './components/IconPickerModal';
 import { UpdateModal } from './components/UpdateModal';
+import { ArticleToVideoModal } from './components/ArticleToVideoModal';
 import { useUpdateManager } from './hooks/useUpdateManager';
 
 export const App: React.FC = () => {
@@ -53,6 +54,7 @@ export const App: React.FC = () => {
   const [isExportModalOpen, setIsExportModalOpen] = useState<boolean>(false);
   const [isIconPickerOpen, setIsIconPickerOpen] = useState<boolean>(false);
   const [iconPickerMode, setIconPickerMode] = useState<'new' | 'replace'>('new');
+  const [isArticleModalOpen, setIsArticleModalOpen] = useState<boolean>(false);
 
   // Intelligent In-App Auto-Update Manager
   const {
@@ -228,6 +230,13 @@ export const App: React.FC = () => {
         onRedo={redo}
         onUpdateTitle={(title) => setProject((prev) => ({ ...prev, title }))}
         onResetTemplate={resetToTemplate}
+        onSelectTemplate={(tmpl) => {
+          setProject(tmpl);
+          if (tmpl.slides?.[0]?.id) {
+            setActiveSlideId(tmpl.slides[0].id);
+          }
+        }}
+        onOpenArticleModal={() => setIsArticleModalOpen(true)}
         onOpenExportModal={() => setIsExportModalOpen(true)}
         onSelectAspectRatio={setAspectRatio}
         hasUpdate={Boolean(updateInfo?.hasUpdate)}
@@ -363,6 +372,19 @@ export const App: React.FC = () => {
         isUpdating={isUpdating}
         updateStatus={updateStatus}
         updateError={updateError}
+      />
+
+      {/* AI Article-to-Video Engine Modal */}
+      <ArticleToVideoModal
+        isOpen={isArticleModalOpen}
+        onClose={() => setIsArticleModalOpen(false)}
+        onApplyProject={(newProj) => {
+          setProject(newProj);
+          if (newProj.slides?.[0]?.id) {
+            setActiveSlideId(newProj.slides[0].id);
+          }
+        }}
+        currentAspectRatio={project.aspectRatio}
       />
     </div>
   );

@@ -6,6 +6,7 @@ import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { spawn, ChildProcessWithoutNullStreams } from 'child_process';
 import { getFFmpegPath } from './ffmpeg';
+import { fetchArticleFromUrl, generateArticleVideoProject } from './articleAi';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -333,6 +334,50 @@ app.post('/api/updates/apply', async (_req, res) => {
   } catch (err: any) {
     console.error('[System Update Error]:', err);
     res.status(500).json({ error: 'Failed to pull updates', details: err.message });
+  }
+});
+
+// ==========================================
+// 3. AI Article-to-Video Endpoints
+// ==========================================
+
+// Extract article text and headings from URL
+app.post('/api/ai/extract-article', async (req, res) => {
+  try {
+    const { url } = req.body;
+    if (!url) {
+      return res.status(400).json({ error: 'آدرس اینترنتی مقاله (URL) الزامی است.' });
+    }
+    console.log(`[AI Engine] Fetching article from: ${url}`);
+    const data = await fetchArticleFromUrl(url);
+    res.json({ success: true, article: data });
+  } catch (err: any) {
+    console.error('[AI Extract Error]:', err);
+    res.status(500).json({ error: err.message || 'خطا در واکشی اطلاعات مقاله' });
+  }
+});
+
+// Generate complete video project from article
+app.post('/api/ai/generate-article-video', async (req, res) => {
+  try {
+    const { url, text, title, points, style, aspectRatio, targetDuration, apiKey } = req.body;
+    console.log(`[AI Engine] Generating video project for article: ${title || url || 'raw text'}`);
+
+    const project = await generateArticleVideoProject({
+      url,
+      text,
+      title,
+      points,
+      style,
+      aspectRatio,
+      targetDuration,
+      apiKey,
+    });
+
+    res.json({ success: true, project });
+  } catch (err: any) {
+    console.error('[AI Video Generation Error]:', err);
+    res.status(500).json({ error: err.message || 'خطا در تولید ویدیوی مقاله با هوش مصنوعی' });
   }
 });
 
