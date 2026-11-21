@@ -5,6 +5,7 @@ interface ArticleExtractResult {
   description: string;
   content: string;
   headings: string[];
+  paragraphs: string[];
 }
 
 /**
@@ -68,7 +69,7 @@ export async function fetchArticleFromUrl(url: string): Promise<ArticleExtractRe
   const headingMatches = cleanedHtml.matchAll(/<h[23][^>]*>(.*?)<\/h[23]>/gi);
   for (const match of headingMatches) {
     const hText = cleanHtmlText(match[1]);
-    if (hText.length > 5 && hText.length < 80) {
+    if (hText.length > 5 && hText.length < 90) {
       headings.push(hText);
     }
   }
@@ -78,7 +79,7 @@ export async function fetchArticleFromUrl(url: string): Promise<ArticleExtractRe
   const pMatches = cleanedHtml.matchAll(/<p[^>]*>(.*?)<\/p>/gi);
   for (const match of pMatches) {
     const pText = cleanHtmlText(match[1]);
-    if (pText.length > 25) {
+    if (pText.length > 35 && pText.length < 300) {
       paragraphs.push(pText);
     }
   }
@@ -90,6 +91,7 @@ export async function fetchArticleFromUrl(url: string): Promise<ArticleExtractRe
     description,
     content: content || description,
     headings: headings.slice(0, 6),
+    paragraphs: paragraphs.slice(0, 10),
   };
 }
 
@@ -117,7 +119,7 @@ export async function generateArticleVideoProject(params: {
   points?: string[];
   style?: 'tips' | 'problem-solution' | 'deep-dive';
   aspectRatio?: AspectRatioType;
-  targetDuration?: number; // seconds (default ~40)
+  targetDuration?: number; // seconds
   apiKey?: string;
 }): Promise<Project> {
   const aspectRatio = params.aspectRatio || '16:9';
@@ -130,6 +132,7 @@ export async function generateArticleVideoProject(params: {
     description: '',
     content: params.text || '',
     headings: params.points || [],
+    paragraphs: params.text ? params.text.split('\n').filter((p) => p.trim().length > 20) : [],
   };
 
   // If URL is provided, fetch article
@@ -141,6 +144,7 @@ export async function generateArticleVideoProject(params: {
         description: fetched.description,
         content: params.text || fetched.content,
         headings: params.points && params.points.length > 0 ? params.points : fetched.headings,
+        paragraphs: fetched.paragraphs,
       };
     } catch (err: any) {
       console.warn('[Article Fetch Warning]:', err.message);
@@ -179,7 +183,7 @@ export async function generateArticleVideoProject(params: {
 }
 
 /**
- * Gemini AI Engine for generating full Project JSON
+ * Gemini AI Engine for generating full Project JSON with high visual design fidelity
  */
 async function callGeminiArticleToVideo(opts: {
   article: ArticleExtractResult;
@@ -191,59 +195,46 @@ async function callGeminiArticleToVideo(opts: {
 }): Promise<Project> {
   const isVertical = opts.aspectRatio === '9:16';
 
-  const systemInstruction = `شما کارگردان و تدوینگر ارشد آژانس برندینگ «مافوق» (mafogh.com) هستید.
-وظیفه شما تبدیل متن مقاله زیر به یک ویدیوی پرزنتیشن انیمیشنی، حرفه‌ای و فوق‌العاده جذاب در حدود ۳۰ تا ۵۰ ثانیه است.
+  const systemInstruction = `شما کارگردان هنری، طراح موشن‌گرافیک و تدوینگر ارشد آژانس برندینگ «مافوق» (mafogh.com) هستید.
+وظیفه شما تبدیل متن مقاله وب‌سایت به یک ویدیوی پرزنتیشن انیمیشنی، جذاب و باهویت بصری لوکس و مدرن است.
 
-قوانین طراحی و تایپوگرافی مافوق:
-۱. رنگ سازمانی پایه (Base Color): #6B0B45
-۲. طیف سازمانی مافوق: #FBF4F8 (روشن)، #DE7AB6 (صورتی)، #D73697، #A81970، #6B0B45 (پایه)، #2F041E (تیره)
-۳. اسلایدها:
-   - اسلاید ۱: کاور و قلاب شوکه‌کننده با عنوان مقاله + بج «خلاصه مقاله در ۳۰ ثانیه» + آرم مافوق
-   - اسلایدهای میانی (۲ تا ۴ اسلاید): هر اسلاید فقط روی ۱ نکته یا بینش کلیدی تمرکز دارد با بج «نکته ۱»، «نکته ۲» و تیتر درشت و کلمه کلیدی هایلایت‌شده
-   - اسلاید پایانی: دعوت به اقدام (CTA) با عنوان «مطالعه متن کامل در سایت مافوق» و نشانی mafogh.com
-۴. رزولوشن: ${opts.width}x${opts.height} (${opts.aspectRatio})
-۵. خروجی باید صرفاً و منحصراً یک ساختار معتبر JSON از نوع Project مطابق با ساختار زیر باشد:
+قوانین اساسی چیدمان و تایپوگرافی مافوق (بسیار مهم):
+۱. هرگز متن‌ها نباید روی هم بیفتند (No overlapping!). مختصات عمودی (Y) المان‌ها باید فاصله کافی داشته باشد:
+   - بج / تگ بالای اسلاید: Y = 18%
+   - تیتر اصلی اسلاید: Y = 32% (با width = 80% و fontSize بین 48 تا 58)
+   - کارت توضیحات کلیدی: Y = 64% (با width = 76% و fontSize بین 26 تا 30 و دارای آیکون اختصاصی)
+۲. پس‌زمینه‌ها نباید سفید ساده یا سیاه خالی باشند؛ حتماً از گرادینت‌های ملایم سازمانی مافوق استفاده شود:
+   - اسلایدهای روشن: type: "gradient", color1: "#FAF5F8", color2: "#FFFFFF", gradientAngle: 135
+   - اسلاید پایانی CTA: type: "gradient", color1: "#6B0B45", color2: "#2F041E", gradientAngle: 145
+۳. آیکون‌های برداری: برای هر نکته حتماً آیکون متناسب انتخاب شود:
+   - استراتژی و هدف: "Target"
+   - اعتماد و امنیت برند: "ShieldCheck"
+   - رشد و فروش: "TrendingUp"
+   - ایده و بینش: "Lightbulb"
+   - هویت و پرستیژ: "Award" یا "Sparkles"
+   - چالش و هشدار: "AlertTriangle"
+۴. ساختار اسلایدها:
+   - اسلاید ۱ (کاور): بج "⏱️ خلاصه ۳۰ ثانیه‌ای مقاله" + آیکون مرکزی + تیتر جذاب مقاله + تگ "وبلاگ مافوق"
+   - اسلایدهای میانی (۳ اسلاید): هر اسلاید فقط یک نکته واقعی از مقاله را با بج شماره نکته + تیتر درشت + کارت شیک با آیکون و توضیح آموزنده پوشش می‌دهد
+   - اسلاید پایانی (CTA): پس‌زمینه بنفش مافوق + تیتر "مطالعه متن کامل مقاله در سایت مافوق" + کارت دکمه‌مانند سفید با متن "🔗 mafogh.com/blog | کلیک کنید ←"
+۵. خروجی باید فقط و فقط یک شیء JSON معتبر مطابق با ساختار Project بدون هیچ تگ markdown یا توضیح اضافه باشد:
 {
-  "id": "proj-article-ai-...",
+  "id": "proj-article-ai-${Date.now()}",
   "title": "${opts.article.title.replace(/"/g, '')}",
   "width": ${opts.width},
   "height": ${opts.height},
   "aspectRatio": "${opts.aspectRatio}",
   "fps": 30,
   "watermark": { "enabled": true, "type": "text", "text": "مافوق", "position": "bottom-center", "opacity": 0.9, "size": 26 },
-  "slides": [
-    {
-      "id": "slide-1",
-      "title": "عنوان اسلاید",
-      "duration": 5.0,
-      "background": { "type": "solid", "color1": "#ffffff" },
-      "transitionOut": "fade",
-      "transitionDuration": 0.6,
-      "elements": [
-        {
-          "id": "el-1",
-          "type": "title",
-          "content": "متن جذاب فارسی",
-          "x": 50,
-          "y": 45,
-          "color": "#6b0b45",
-          "fontSize": ${isVertical ? 54 : 76},
-          "fontWeight": "900",
-          "textAlign": "center",
-          "animation": { "type": "slide-up", "duration": 0.8, "delay": 0.2 }
-        }
-      ]
-    }
-  ]
-}
-فقط و فقط کدهای JSON برگردانده شود بدون تگ‌های اضافی یا متن توضیحی markdown.`;
+  "slides": [ ... ]
+}`;
 
   const userPrompt = `مقاله برای تبدیل به ویدیو:
 عنوان: ${opts.article.title}
 توضیحات: ${opts.article.description}
-سرفصل‌ها و نکات: ${opts.article.headings.join(' | ')}
-متن خلاصه:
-${opts.article.content.slice(0, 3000)}`;
+سرفصل‌ها: ${opts.article.headings.join(' | ')}
+متن اصلی مقاله:
+${opts.article.content.slice(0, 3500)}`;
 
   const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${opts.apiKey}`;
 
@@ -254,7 +245,7 @@ ${opts.article.content.slice(0, 3000)}`;
       contents: [{ role: 'user', parts: [{ text: userPrompt }] }],
       systemInstruction: { parts: [{ text: systemInstruction }] },
       generationConfig: {
-        temperature: 0.4,
+        temperature: 0.3,
         responseMimeType: 'application/json',
       },
     }),
@@ -282,6 +273,7 @@ ${opts.article.content.slice(0, 3000)}`;
 
 /**
  * Smart Heuristic Fallback Generator (Builds full video project algorithmically)
+ * Ultra-polished layout with proper vertical spacing, gradient backgrounds, and real cards!
  */
 function buildSmartHeuristicProject(opts: {
   article: ArticleExtractResult;
@@ -294,195 +286,271 @@ function buildSmartHeuristicProject(opts: {
   const slides: Slide[] = [];
 
   const rawTitle = opts.article.title || 'خلاصه مقاله تخصصی';
-  const cleanTitle = rawTitle.length > 50 ? `${rawTitle.slice(0, 48)}...` : rawTitle;
+  const cleanTitle = rawTitle.length > 55 ? `${rawTitle.slice(0, 52)}...` : rawTitle;
 
-  // Extract key points
-  const points = (opts.article.headings && opts.article.headings.length > 0)
-    ? opts.article.headings.slice(0, 3)
-    : [
-        'تحلیل دقیق هویت و ساختار برند',
-        'ایجاد تمایز واقعی در نگاه مخاطب',
-        'استمرار و همسانی پیام در تمام نقاط تماس',
-      ];
+  // Extract key points from headings or defaults
+  const points =
+    opts.article.headings && opts.article.headings.length >= 2
+      ? opts.article.headings.slice(0, 3)
+      : [
+          'شناخت دقیق پرسونای مخاطب و نیازهای پنهان',
+          'خلق تمایز پایدار و فرار از کپی‌کاری رقبا',
+          'یکپارچگی پیام و هویت در تمام نقاط تماس برند',
+        ];
 
-  // SLIDE 1: Cover / Hook
+  // Helper to get real paragraph snippet for each point
+  const getSnippetForPoint = (idx: number): string => {
+    if (opts.article.paragraphs && opts.article.paragraphs[idx]) {
+      const p = opts.article.paragraphs[idx];
+      return p.length > 130 ? `${p.slice(0, 125)}...` : p;
+    }
+    const fallbacks = [
+      'هویت معنادار زمانی شکل می‌گیرد که ارزش واقعی خود را شفاف و قابل لمس بیان کنید.',
+      'بدون ایجاد تمایز معنادار، حتی سنگین‌ترین بودجه‌های تبلیغاتی نیز محکوم به فراموشی هستند.',
+      'استمرار در ارائه تصویر یکپارچه، ضریب اعتماد و وفاداری مخاطبان را تا ۳ برابر ارتقا می‌دهد.',
+    ];
+    return fallbacks[idx % fallbacks.length];
+  };
+
+  const pointIcons = ['Target', 'ShieldCheck', 'TrendingUp', 'Lightbulb', 'Award'];
+
+  // ==========================================
+  // SLIDE 1: Cover / Hook (Gradient + Pill + Icon + Title)
+  // ==========================================
   slides.push({
     id: `slide-${Date.now()}-1`,
     title: `کاور: ${cleanTitle}`,
     duration: 5.0,
     background: {
-      type: 'solid',
-      color1: '#ffffff',
+      type: 'gradient',
+      color1: '#FAF5F8',
+      color2: '#FFFFFF',
+      gradientAngle: 135,
     },
     transitionOut: 'fade',
     transitionDuration: 0.6,
     elements: [
-      // Category / Brand Pill
+      // 1. Top Capsule Tag
       {
         id: 'el-c-badge',
         type: 'badge',
-        content: 'خلاصه مقاله در ۳۰ ثانیه',
-        badgeNumber: '✨',
+        content: 'خلاصه ۳۰ ثانیه‌ای مقاله وبلاگ',
+        badgeNumber: '⏱️',
         x: 50,
-        y: isVertical ? 32 : 30,
+        y: isVertical ? 22 : 20,
         color: '#6B0B45',
-        backgroundColor: '#FBF4F8',
+        backgroundColor: '#FFFFFF',
         borderColor: '#EABAD7',
         fontSize: isVertical ? 22 : 24,
         fontWeight: '700',
         textAlign: 'center',
         padding: 14,
         borderRadius: 99,
-        animation: { type: 'slide-down', duration: 0.7, delay: 0.2 },
+        animation: { type: 'slide-down', duration: 0.6, delay: 0.2 },
       },
-      // Main Title
+      // 2. Center Decorative Icon
+      {
+        id: 'el-c-icon',
+        type: 'icon',
+        content: 'Sparkles',
+        x: 50,
+        y: isVertical ? 34 : 33,
+        color: '#6B0B45',
+        backgroundColor: '#FBF4F8',
+        borderColor: '#EABAD7',
+        fontSize: isVertical ? 50 : 64,
+        padding: isVertical ? 16 : 20,
+        borderRadius: 24,
+        strokeWidth: 2,
+        animation: { type: 'pop-in', duration: 0.7, delay: 0.4 },
+      },
+      // 3. Main Title
       {
         id: 'el-c-title',
         type: 'title',
         content: cleanTitle,
         x: 50,
-        y: isVertical ? 45 : 46,
+        y: isVertical ? 50 : 52,
+        width: isVertical ? 88 : 82,
         color: '#2F041E',
-        fontSize: isVertical ? 50 : 68,
+        fontSize: isVertical ? 48 : 58,
         fontWeight: '900',
         textAlign: 'center',
-        animation: { type: 'slide-up', duration: 0.8, delay: 0.4 },
+        animation: { type: 'slide-up', duration: 0.8, delay: 0.6 },
       },
-      // Subtitle / Prompt
+      // 4. Subtitle / Brand attribution
       {
         id: 'el-c-sub',
         type: 'subtitle',
-        content: 'مهم‌ترین نکات و بینش‌های این مقاله که باید بدانید',
+        content: 'آژانس برندینگ مافوق • راهنمای اختصاصی',
         x: 50,
-        y: isVertical ? 60 : 60,
+        y: isVertical ? 68 : 68,
         color: '#64748B',
-        fontSize: isVertical ? 24 : 30,
+        fontSize: isVertical ? 22 : 26,
         fontWeight: '500',
         textAlign: 'center',
-        animation: { type: 'slide-up', duration: 0.7, delay: 0.7 },
+        animation: { type: 'slide-up', duration: 0.7, delay: 0.9 },
       },
     ],
   });
 
-  // SLIDES 2..N: Points
+  // ==========================================
+  // SLIDES 2..N: Points (Pill + Heading + Styled Card with Icon)
+  // ==========================================
   points.forEach((point, idx) => {
     const pointNum = idx + 1;
     const persianNums = ['۱', '۲', '۳', '۴', '۵'];
     const pNumStr = persianNums[idx] || String(pointNum);
+    const snippet = getSnippetForPoint(idx);
+    const iconName = pointIcons[idx % pointIcons.length];
 
     slides.push({
       id: `slide-${Date.now()}-${pointNum + 1}`,
       title: `نکته ${pNumStr}: ${point.slice(0, 30)}`,
       duration: 6.0,
       background: {
-        type: 'solid',
-        color1: '#ffffff',
+        type: 'gradient',
+        color1: '#FDFBFC',
+        color2: '#F8F3F6',
+        gradientAngle: 135,
       },
       transitionOut: 'fade',
       transitionDuration: 0.6,
       elements: [
-        // Number badge
+        // 1. Number / Section Tag
         {
           id: `el-p${pointNum}-badge`,
           type: 'badge',
-          content: `نکته شماره ${pNumStr}`,
-          badgeNumber: pNumStr,
+          content: `نکته کلیدی شماره ${pNumStr}`,
+          badgeNumber: `۰${pNumStr}`,
           x: 50,
-          y: isVertical ? 32 : 30,
+          y: isVertical ? 20 : 18,
           color: '#ffffff',
           backgroundColor: '#6B0B45',
-          fontSize: isVertical ? 22 : 26,
+          borderColor: '#5C093B',
+          fontSize: isVertical ? 20 : 22,
           fontWeight: '800',
           textAlign: 'center',
-          padding: 16,
+          padding: 14,
           borderRadius: 99,
           animation: { type: 'slide-down', duration: 0.6, delay: 0.2 },
         },
-        // Point Core Heading
+        // 2. Point Core Statement
         {
           id: `el-p${pointNum}-title`,
           type: 'title',
           content: point,
           x: 50,
-          y: isVertical ? 46 : 46,
+          y: isVertical ? 34 : 32,
+          width: isVertical ? 88 : 80,
           color: '#2F041E',
-          fontSize: isVertical ? 46 : 60,
+          fontSize: isVertical ? 42 : 52,
           fontWeight: '900',
           textAlign: 'center',
-          animation: { type: 'slide-up', duration: 0.8, delay: 0.5 },
+          animation: { type: 'slide-up', duration: 0.7, delay: 0.4 },
         },
-        // Context box / takeaway
+        // 3. High-Fidelity Content Card with Icon & Real Content
         {
           id: `el-p${pointNum}-card`,
           type: 'card',
-          content: 'این بخش به درک بهتر استراتژی و نتیجه‌گیری عملی در کسب‌وکار کمک می‌کند.',
+          content: snippet,
+          subcontent: 'برگرفته از مباحث تخصصی مقاله',
+          icon: iconName,
           x: 50,
           y: isVertical ? 62 : 62,
-          color: '#475569',
-          backgroundColor: '#FBF4F8',
+          width: isVertical ? 90 : 76,
+          color: '#334155',
+          backgroundColor: '#FFFFFF',
           borderColor: '#EABAD7',
           fontSize: isVertical ? 24 : 28,
           fontWeight: '500',
-          textAlign: 'center',
-          borderRadius: 16,
-          animation: { type: 'slide-up', duration: 0.7, delay: 0.9 },
+          padding: 28,
+          borderRadius: 24,
+          animation: { type: 'slide-up', duration: 0.8, delay: 0.8 },
         },
       ],
     });
   });
 
-  // FINAL SLIDE: Call-To-Action (CTA)
+  // ==========================================
+  // FINAL SLIDE: Call-To-Action (Rich Purple Gradient + White Action Card)
+  // ==========================================
   slides.push({
     id: `slide-${Date.now()}-cta`,
-    title: 'پایان: مطالعه متن کامل',
+    title: 'پایان: مطالعه متن کامل در وب‌سایت',
     duration: 5.0,
     background: {
-      type: 'solid',
-      color1: '#6B0B45', // Mafogh Brand Base Color
+      type: 'gradient',
+      color1: '#6B0B45',
+      color2: '#2F041E',
+      gradientAngle: 145,
     },
     transitionOut: 'none',
     transitionDuration: 0.5,
     elements: [
+      // 1. Top Question Pill
       {
         id: 'el-cta-hook',
-        type: 'subtitle',
+        type: 'badge',
         content: 'می‌خواهید عمیق‌تر این موضوع را یاد بگیرید؟',
+        badgeNumber: '💡',
         x: 50,
-        y: isVertical ? 35 : 34,
-        color: '#EABAD7',
-        fontSize: isVertical ? 26 : 32,
-        fontWeight: '500',
+        y: isVertical ? 22 : 20,
+        color: '#FFFFFF',
+        backgroundColor: 'rgba(255, 255, 255, 0.15)',
+        borderColor: 'rgba(255, 255, 255, 0.3)',
+        fontSize: isVertical ? 22 : 24,
+        fontWeight: '600',
         textAlign: 'center',
+        padding: 14,
+        borderRadius: 99,
         animation: { type: 'slide-down', duration: 0.6, delay: 0.2 },
       },
+      // 2. Action Title
       {
         id: 'el-cta-title',
         type: 'title',
         content: 'مطالعه متن کامل مقاله در سایت مافوق',
         x: 50,
-        y: isVertical ? 46 : 46,
-        color: '#ffffff',
-        fontSize: isVertical ? 48 : 66,
+        y: isVertical ? 38 : 38,
+        width: isVertical ? 88 : 80,
+        color: '#FFFFFF',
+        fontSize: isVertical ? 46 : 60,
         fontWeight: '900',
         textAlign: 'center',
         animation: { type: 'slide-up', duration: 0.8, delay: 0.5 },
       },
-      // Website URL Pill
+      // 3. Prominent White Action Button Card
       {
-        id: 'el-cta-badge',
-        type: 'badge',
-        content: 'mafogh.com',
-        badgeNumber: '🔗',
+        id: 'el-cta-card',
+        type: 'card',
+        content: 'mafogh.com • کلیک کنید و آنلاین بخوانید ←',
+        subcontent: 'دسترسی رایگان به تمام سرفصل‌ها و چک‌لیست‌های تخصصی',
+        icon: 'BookOpen',
         x: 50,
-        y: isVertical ? 60 : 60,
+        y: isVertical ? 64 : 64,
+        width: isVertical ? 88 : 64,
         color: '#6B0B45',
-        backgroundColor: '#ffffff',
-        fontSize: isVertical ? 28 : 34,
-        fontWeight: '900',
+        backgroundColor: '#FFFFFF',
+        borderColor: '#FFFFFF',
+        fontSize: isVertical ? 26 : 30,
+        fontWeight: '800',
+        padding: 26,
+        borderRadius: 24,
+        animation: { type: 'pop-in', duration: 0.8, delay: 0.8 },
+      },
+      // 4. Branding Tagline
+      {
+        id: 'el-cta-footer',
+        type: 'subtitle',
+        content: 'آژانس برندینگ مافوق | مرجع خلق و بازسازی برند',
+        x: 50,
+        y: isVertical ? 82 : 82,
+        color: '#EABAD7',
+        fontSize: isVertical ? 20 : 24,
+        fontWeight: '500',
         textAlign: 'center',
-        padding: 20,
-        borderRadius: 99,
-        animation: { type: 'pop-in', duration: 0.7, delay: 0.9 },
+        animation: { type: 'fade-in', duration: 0.8, delay: 1.1 },
       },
     ],
   });

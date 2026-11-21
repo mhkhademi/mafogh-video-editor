@@ -35,9 +35,11 @@ export const SlideElement: React.FC<SlideElementProps> = ({
     forceVisible
   );
 
-  // For images, width is an explicit percentage (defaults to 35%) so preview matches canvasRenderer exactly
+  // For images and cards, provide sensible percentage width defaults
   const elementWidth = element.type === 'image'
     ? (element.width ?? 35)
+    : element.type === 'card'
+    ? (element.width ?? 76)
     : element.width;
 
   const isTyping =
@@ -52,7 +54,7 @@ export const SlideElement: React.FC<SlideElementProps> = ({
     top: `${element.y}%`,
     transform: `translate(-50%, -50%) translateY(${motion.offsetY}px) scale(${motion.scale}) rotate(${element.rotation || 0}deg)`,
     width: elementWidth ? `${elementWidth}%` : 'max-content',
-    maxWidth: elementWidth ? undefined : '92%',
+    maxWidth: elementWidth ? undefined : '90%',
     opacity: motion.opacity,
     display: motion.isVisible || isSelected ? 'block' : 'none',
     transition: 'outline 0.15s ease',
@@ -143,23 +145,54 @@ export const SlideElement: React.FC<SlideElementProps> = ({
           </div>
         );
 
-      case 'card':
+      case 'card': {
+        const IconComponent = element.icon ? getLucideIcon(element.icon) : null;
         return (
           <div
-            className="flex items-center justify-center shadow-lg"
+            className="w-full flex items-center gap-5 border shadow-xl transition-all"
             style={{
-              width: `${(element.fontSize || 80) * 1.8}px`,
-              height: `${(element.fontSize || 80) * 1.8}px`,
-              borderRadius: `${element.borderRadius ?? 999}px`,
-              backgroundColor: element.backgroundColor || '#9d174d',
-              color: element.color || '#ffffff',
-              fontSize: `${element.fontSize || 80}px`,
-              fontWeight: '900',
+              backgroundColor: element.backgroundColor || '#ffffff',
+              borderColor: element.borderColor || '#E2E8F0',
+              borderRadius: `${element.borderRadius ?? 24}px`,
+              padding: `${element.padding ?? 28}px 36px`,
+              boxShadow: '0 20px 40px -15px rgba(0, 0, 0, 0.08), 0 0 1px 1px rgba(0,0,0,0.04)',
             }}
           >
-            {textToShow}
+            {IconComponent && (
+              <div
+                className="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 shadow-sm"
+                style={{
+                  backgroundColor: element.color ? `${element.color}15` : '#6B0B4515',
+                  color: element.color || '#6B0B45',
+                }}
+              >
+                <IconComponent size={30} strokeWidth={2.5} />
+              </div>
+            )}
+            <div className="flex-1 flex flex-col justify-center text-right">
+              <div
+                style={{
+                  color: element.color || '#1E293B',
+                  fontSize: `${element.fontSize || 28}px`,
+                  fontWeight: element.fontWeight || '600',
+                  lineHeight: 1.7,
+                }}
+                className="w-full leading-relaxed select-none"
+              >
+                {textToShow}
+              </div>
+              {element.subcontent && (
+                <div
+                  className="mt-1.5 text-slate-400 font-medium"
+                  style={{ fontSize: `${Math.max(16, (element.fontSize || 28) * 0.7)}px` }}
+                >
+                  {element.subcontent}
+                </div>
+              )}
+            </div>
           </div>
         );
+      }
 
       case 'image':
         return (
@@ -261,8 +294,31 @@ export const SlideElement: React.FC<SlideElementProps> = ({
         );
       }
 
-      case 'shape':
       case 'badge': {
+        const IconComponent = element.icon ? getLucideIcon(element.icon) : null;
+        return (
+          <div
+            className="inline-flex items-center gap-2.5 border shadow-md select-none whitespace-nowrap transition-all"
+            style={{
+              backgroundColor: element.backgroundColor || '#FBF4F8',
+              borderColor: element.borderColor || '#EABAD7',
+              color: element.color || '#6B0B45',
+              borderRadius: `${element.borderRadius ?? 999}px`,
+              padding: `${element.padding ? element.padding / 2 : 10}px 24px`,
+              fontSize: `${element.fontSize || 22}px`,
+              fontWeight: element.fontWeight || '700',
+            }}
+          >
+            {element.badgeNumber && (
+              <span className="font-mono font-black opacity-90">{element.badgeNumber}</span>
+            )}
+            {IconComponent && <IconComponent size={(element.fontSize || 22) * 0.9} strokeWidth={2.5} />}
+            <span>{textToShow}</span>
+          </div>
+        );
+      }
+
+      case 'shape': {
         if (element.shapeKind === 'divider') {
           const color = element.color || '#6b0b45';
           const strokeWidth = element.strokeWidth || 3;

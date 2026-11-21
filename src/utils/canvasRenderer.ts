@@ -149,18 +149,123 @@ export function renderSlideToCanvas(
 
       ctx.restore();
     } else if (element.type === 'card') {
-      // Circle icon e.g. dollar icon
-      const size = (element.fontSize || 80) * 1.6;
-      ctx.fillStyle = element.backgroundColor || '#9d174d';
+      const cardW = ((element.width || 76) / 100) * width;
+      const pad = element.padding || 32;
+      const fontSize = element.fontSize || 28;
+      const radius = element.borderRadius ?? 24;
+
+      // Calculate multi-line wrap for card text
+      ctx.font = `${element.fontWeight || '600'} ${fontSize}px 'Vazirmatn', sans-serif`;
+      const textMaxW = cardW - pad * 2 - (element.icon ? 70 : 0);
+      const words = motion.displayText.split(' ');
+      let line = '';
+      const lines: string[] = [];
+
+      for (let n = 0; n < words.length; n++) {
+        const testLine = line + words[n] + ' ';
+        const metrics = ctx.measureText(testLine);
+        if (metrics.width > textMaxW && n > 0) {
+          lines.push(line);
+          line = words[n] + ' ';
+        } else {
+          line = testLine;
+        }
+      }
+      lines.push(line);
+
+      const lineHeight = fontSize * 1.6;
+      const textH = lines.length * lineHeight;
+      const cardH = Math.max(90, textH + pad * 2);
+
+      ctx.save();
+      ctx.translate(-cardW / 2, -cardH / 2);
+
+      // Card Background & Shadow
+      ctx.fillStyle = element.backgroundColor || '#ffffff';
       ctx.beginPath();
-      ctx.arc(0, 0, size / 2, 0, Math.PI * 2);
+      ctx.roundRect(0, 0, cardW, cardH, radius);
       ctx.fill();
 
-      ctx.font = `900 ${element.fontSize || 80}px 'Vazirmatn', sans-serif`;
-      ctx.fillStyle = element.color || '#ffffff';
+      // Card Border
+      ctx.strokeStyle = element.borderColor || '#E2E8F0';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // Draw Icon on Right (RTL start) if present
+      let textStartX = cardW - pad;
+      if (element.icon) {
+        const iconSize = 32;
+        const iconBoxSize = 56;
+        const iconBoxX = cardW - pad - iconBoxSize;
+        const iconBoxY = (cardH - iconBoxSize) / 2;
+
+        ctx.fillStyle = element.color ? `${element.color}15` : 'rgba(107, 11, 69, 0.08)';
+        ctx.beginPath();
+        ctx.roundRect(iconBoxX, iconBoxY, iconBoxSize, iconBoxSize, 16);
+        ctx.fill();
+
+        const cacheKey = `icon-${element.icon}-${element.color || '#6B0B45'}-${iconSize}-2`;
+        let iconImg = imageCache?.get(cacheKey);
+        if (!iconImg) {
+          iconImg = new Image();
+          iconImg.src = getIconSvgDataUri(element.icon, element.color || '#6B0B45', iconSize, 2);
+          imageCache?.set(cacheKey, iconImg);
+        }
+        if (iconImg.complete && iconImg.naturalWidth > 0) {
+          ctx.drawImage(iconImg, iconBoxX + (iconBoxSize - iconSize) / 2, iconBoxY + (iconBoxSize - iconSize) / 2, iconSize, iconSize);
+        }
+
+        textStartX = iconBoxX - 20;
+      }
+
+      // Draw Text lines
+      ctx.fillStyle = element.color || '#1E293B';
+      ctx.font = `${element.fontWeight || '600'} ${fontSize}px 'Vazirmatn', sans-serif`;
+      ctx.textAlign = 'right';
+      ctx.textBaseline = 'middle';
+      ctx.direction = 'rtl';
+
+      let startY = (cardH - textH) / 2 + lineHeight / 2;
+      for (const l of lines) {
+        ctx.fillText(l.trim(), textStartX, startY);
+        startY += lineHeight;
+      }
+
+      ctx.restore();
+    } else if (element.type === 'badge') {
+      const fontSize = element.fontSize || 22;
+      ctx.font = `bold ${fontSize}px 'Vazirmatn', sans-serif`;
+      const textMetrics = ctx.measureText(motion.displayText);
+      const padX = 24;
+      const padY = 10;
+      const badgeW = textMetrics.width + padX * 2 + (element.badgeNumber ? 36 : 0);
+      const badgeH = fontSize + padY * 2;
+      const radius = element.borderRadius ?? 999;
+
+      ctx.save();
+      ctx.translate(-badgeW / 2, -badgeH / 2);
+
+      // Badge Background
+      ctx.fillStyle = element.backgroundColor || '#FBF4F8';
+      ctx.beginPath();
+      ctx.roundRect(0, 0, badgeW, badgeH, radius);
+      ctx.fill();
+
+      // Badge Border
+      ctx.strokeStyle = element.borderColor || '#EABAD7';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+
+      // Badge Text
+      ctx.fillStyle = element.color || '#6B0B45';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText(motion.displayText, 0, 4);
+      ctx.direction = 'rtl';
+
+      const label = element.badgeNumber ? `${element.badgeNumber} ${motion.displayText}` : motion.displayText;
+      ctx.fillText(label, badgeW / 2, badgeH / 2 + 1);
+
+      ctx.restore();
     } else if (element.type === 'image') {
       // Draw image element with aspect-ratio preservation and rounded corners
       const img = imageCache?.get(element.content);
