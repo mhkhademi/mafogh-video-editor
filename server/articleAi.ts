@@ -295,7 +295,8 @@ async function callGeminiArticleToVideo(opts: {
 متن اصلی مقاله:
 ${opts.article.content.slice(0, 3500)}`;
 
-  const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${opts.apiKey}`;
+  // Use gemini-1.5-flash (standard, fast, universally supported across all API keys)
+  const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${opts.apiKey}`;
 
   const response = await fetch(endpoint, {
     method: 'POST',
