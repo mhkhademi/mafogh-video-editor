@@ -32,3 +32,12 @@ pnpm-debug.log*
 .idea
 .DS_Store
 Thumbs.db
+
+# Desktop Installers & Private Launchers
+Setup.exe
+Mafogh.exe
+Create-Desktop-Shortcut.bat
+Mafogh-Editor.vbs
+installer/
+scripts/
+
