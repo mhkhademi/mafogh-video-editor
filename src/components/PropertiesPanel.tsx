@@ -609,6 +609,13 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                   className="p-2.5 bg-slate-800 hover:bg-slate-750 border border-slate-700 rounded-lg flex items-center gap-2 text-xs text-slate-200 transition-colors"
                 >
                   <CreditCard size={16} className="text-emerald-400" />
+                  <span>کارت نکته / پیام</span>
+                </button>
+                <button
+                  onClick={() => onAddElement('icon')}
+                  className="p-2.5 bg-slate-800 hover:bg-slate-750 border border-slate-700 rounded-lg flex items-center gap-2 text-xs text-slate-200 transition-colors"
+                >
+                  <Circle size={16} className="text-pink-400" />
                   <span>آیکون دایره‌ای</span>
                 </button>
                 <button
