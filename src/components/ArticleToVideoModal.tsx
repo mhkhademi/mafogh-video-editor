@@ -15,6 +15,7 @@ import {
   Monitor,
   Flame,
 } from 'lucide-react';
+import { generateClientArticleProject } from '../utils/clientArticleGenerator';
 import { Project, AspectRatioType } from '../types';
 import confetti from 'canvas-confetti';
 
@@ -127,19 +128,42 @@ export const ArticleToVideoModal: React.FC<ArticleToVideoModalProps> = ({
         apiKey: geminiApiKey.trim() || undefined,
       };
 
-      const res = await fetch('http://localhost:3001/api/ai/generate-article-video', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
+      let generatedProject: Project | null = null;
+
+      try {
+        const res = await fetch('http://localhost:3001/api/ai/generate-article-video', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && data.project) {
+            generatedProject = data.project;
+          }
+        }
+      } catch (backendErr) {
+        console.warn('Backend server offline, executing client-side generation engine...', backendErr);
+      }
 
       clearTimeout(stepTimer1);
       clearTimeout(stepTimer2);
 
-      const data = await res.json();
+      // If backend was offline or failed, use client generator directly
+      if (!generatedProject) {
+        generatedProject = generateClientArticleProject({
+          title: manualTitle.trim() || (activeTab === 'url' ? 'خلاصه مقاله مافوق' : 'نکات کلیدی مقاله'),
+          points: manualPoints.filter((p) => p.trim().length > 0),
+          text: manualText.trim(),
+          style: videoStyle,
+          aspectRatio,
+          targetDuration,
+        });
+      }
 
-      if (!res.ok || !data.success || !data.project) {
-        throw new Error(data.error || 'خطا در پردازش هوش مصنوعی.');
+      if (!generatedProject) {
+        throw new Error('خطا در تولید اسلایدهای ویدیو.');
       }
 
       // Confetti & apply
@@ -150,7 +174,7 @@ export const ArticleToVideoModal: React.FC<ArticleToVideoModalProps> = ({
         colors: ['#6B0B45', '#DE7AB6', '#F59E0B', '#3B82F6'],
       });
 
-      onApplyProject(data.project);
+      onApplyProject(generatedProject);
       onClose();
     } catch (err: any) {
       setErrorMsg(err.message || 'خطای غیرمنتظره در تولید ویدیو');
