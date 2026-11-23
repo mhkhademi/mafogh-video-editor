@@ -479,35 +479,33 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                     </div>
 
                     {/* Smart Auto Contrast Toggle */}
-                    <div className="flex items-center justify-between p-2.5 bg-slate-800/60 border border-slate-700/70 rounded-xl">
-                      <div className="pr-1">
-                        <div className="text-xs font-bold text-slate-200 flex items-center gap-1.5">
-                          <span>انطباق هوشمند کنتراست</span>
-                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-pink-500/20 text-pink-300 font-semibold border border-pink-500/30">
-                            Auto Invert
-                          </span>
+                    <div className="p-3 bg-slate-800/60 border border-slate-700/70 rounded-xl space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-1.5">
+                          <Sparkles size={14} className="text-pink-400 shrink-0" />
+                          <span className="text-xs font-bold text-slate-200">انطباق هوشمند کنتراست</span>
                         </div>
-                        <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">
-                          سفید شدن خودکار لوگو روی اسلایدهای تیره و نمایش رنگ اصلی روی اسلایدهای روشن
-                        </p>
-                      </div>
-                      <button
-                        type="button"
-                        role="switch"
-                        aria-checked={watermark.autoContrast ?? true}
-                        onClick={() => onUpdateWatermark({ autoContrast: !(watermark.autoContrast ?? true) })}
-                        className={`w-11 h-6 rounded-full transition-colors relative cursor-pointer focus:outline-none shrink-0 ${
-                          (watermark.autoContrast ?? true) ? 'bg-pink-600' : 'bg-slate-700'
-                        }`}
-                        dir="ltr"
-                        title="انطباق خودکار رنگ با پس‌زمینه"
-                      >
-                        <span
-                          className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-md transition-transform duration-200 block ${
-                            (watermark.autoContrast ?? true) ? 'translate-x-5' : 'translate-x-0'
+                        <button
+                          type="button"
+                          role="switch"
+                          aria-checked={watermark.autoContrast ?? true}
+                          onClick={() => onUpdateWatermark({ autoContrast: !(watermark.autoContrast ?? true) })}
+                          className={`w-11 h-6 rounded-full transition-colors relative cursor-pointer focus:outline-none shrink-0 ${
+                            (watermark.autoContrast ?? true) ? 'bg-pink-600' : 'bg-slate-700'
                           }`}
-                        />
-                      </button>
+                          dir="ltr"
+                          title="انطباق خودکار رنگ با پس‌زمینه"
+                        >
+                          <span
+                            className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-md transition-transform duration-200 block ${
+                              (watermark.autoContrast ?? true) ? 'translate-x-5' : 'translate-x-0'
+                            }`}
+                          />
+                        </button>
+                      </div>
+                      <p className="text-[11px] text-slate-400 leading-relaxed">
+                        سفید شدن خودکار لوگو در اسلایدهای تیره و نمایش رنگ اصلی در اسلایدهای روشن
+                      </p>
                     </div>
 
                     {/* Logo Color / Tint */}
