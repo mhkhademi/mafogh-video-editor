@@ -82,12 +82,12 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
   }, [selectedElement?.id]);
 
   return (
-    <aside className="w-80 bg-slate-900 border-r border-slate-800 flex flex-col h-full select-none shrink-0 overflow-hidden">
+    <aside className="w-68 lg:w-72 xl:w-80 bg-slate-900 border-r border-slate-800 flex flex-col h-full select-none shrink-0 overflow-hidden transition-all">
       {/* Tab Navigation */}
       <div className="flex border-b border-slate-800 bg-slate-950/40 text-xs font-medium">
         <button
           onClick={() => setActiveTab('slide')}
-          className={`flex-1 py-3 text-center transition-colors flex items-center justify-center gap-1.5 cursor-pointer ${
+          className={`flex-1 py-2.5 xl:py-3 text-center transition-colors flex items-center justify-center gap-1.5 cursor-pointer ${
             activeTab === 'slide'
               ? 'text-indigo-400 border-b-2 border-indigo-500 bg-slate-900 font-bold'
               : 'text-slate-400 hover:text-slate-200'
@@ -98,7 +98,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
         </button>
         <button
           onClick={() => setActiveTab('element')}
-          className={`flex-1 py-3 text-center transition-colors flex items-center justify-center gap-1.5 cursor-pointer ${
+          className={`flex-1 py-2.5 xl:py-3 text-center transition-colors flex items-center justify-center gap-1.5 cursor-pointer ${
             activeTab === 'element'
               ? 'text-indigo-400 border-b-2 border-indigo-500 bg-slate-900 font-bold'
               : 'text-slate-400 hover:text-slate-200'
@@ -109,7 +109,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
         </button>
         <button
           onClick={() => setActiveTab('layers')}
-          className={`flex-1 py-3 text-center transition-colors flex items-center justify-center gap-1.5 cursor-pointer ${
+          className={`flex-1 py-2.5 xl:py-3 text-center transition-colors flex items-center justify-center gap-1.5 cursor-pointer ${
             activeTab === 'layers'
               ? 'text-indigo-400 border-b-2 border-indigo-500 bg-slate-900 font-bold'
               : 'text-slate-400 hover:text-slate-200'
@@ -121,7 +121,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
       </div>
 
       {/* Content Area */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-6">
+      <div className="flex-1 overflow-y-auto p-3 xl:p-4 space-y-5 xl:space-y-6">
         {/* ================= TAB 1: SLIDE SETTINGS ================= */}
         {activeTab === 'slide' && (
           <div className="space-y-5">

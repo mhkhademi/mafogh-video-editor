@@ -78,30 +78,30 @@ export const TimelineBar: React.FC<TimelineBarProps> = ({
   const progressPercent = totalDuration > 0 ? (currentTime / totalDuration) * 100 : 0;
 
   return (
-    <footer className={`bg-slate-950 border-t border-slate-800 flex flex-col justify-between px-6 py-2 select-none shrink-0 z-10 transition-all duration-200 ${
-      showElementTracks ? 'h-64' : 'h-24'
+    <footer className={`bg-slate-950 border-t border-slate-800 flex flex-col justify-between px-3 md:px-6 py-1.5 md:py-2 select-none shrink-0 z-10 transition-all duration-200 ${
+      showElementTracks ? 'h-52 md:h-64' : 'h-20 md:h-22 2xl:h-24'
     }`}>
       {/* Top row: Transport Controls and Timings */}
       <div className="flex items-center justify-between">
         {/* Playback Buttons */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 md:gap-3">
           <button
             onClick={onRewind}
-            className="p-2 text-slate-400 hover:text-slate-100 hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
+            className="p-1.5 md:p-2 text-slate-400 hover:text-slate-100 hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
             title="شروع مجدد (Rewind)"
           >
-            <RotateCcw size={16} />
+            <RotateCcw size={15} />
           </button>
           <button
             onClick={onTogglePlay}
-            className="w-10 h-10 bg-indigo-600 hover:bg-indigo-500 text-white rounded-full flex items-center justify-center transition-transform active:scale-95 shadow-lg shadow-indigo-600/30 cursor-pointer"
+            className="w-8 h-8 md:w-9 md:h-9 2xl:w-10 2xl:h-10 bg-indigo-600 hover:bg-indigo-500 text-white rounded-full flex items-center justify-center transition-transform active:scale-95 shadow-lg shadow-indigo-600/30 cursor-pointer shrink-0"
             title={isPlaying ? 'توقف (Space)' : 'پخش پیش‌نمایش (Space)'}
           >
-            {isPlaying ? <Pause size={18} /> : <Play size={18} />}
+            {isPlaying ? <Pause size={16} /> : <Play size={16} className="translate-x-0.5" />}
           </button>
 
           {/* Time display */}
-          <div className="flex items-center gap-2 font-mono text-xs bg-slate-900 px-3 py-1.5 rounded-lg border border-slate-800">
+          <div className="flex items-center gap-1.5 md:gap-2 font-mono text-[11px] md:text-xs bg-slate-900 px-2.5 py-1 md:py-1.5 rounded-lg border border-slate-800">
             <span className="text-indigo-400 font-bold">{formatTime(currentTime)}</span>
             <span className="text-slate-600">/</span>
             <span className="text-slate-400">{formatTime(totalDuration)}</span>
@@ -109,24 +109,25 @@ export const TimelineBar: React.FC<TimelineBarProps> = ({
         </div>
 
         {/* Toggle Elements In/Out Track Button & Status */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 md:gap-3">
           <button
             onClick={() => setShowElementTracks(!showElementTracks)}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium border flex items-center gap-1.5 transition-all cursor-pointer ${
+            className={`px-2.5 md:px-3 py-1 md:py-1.5 rounded-lg text-xs font-medium border flex items-center gap-1.5 transition-all cursor-pointer ${
               showElementTracks
                 ? 'bg-indigo-600/20 border-indigo-500/50 text-indigo-300'
                 : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200'
             }`}
             title="نمایش/پنهان‌سازی تایم‌لاین لایه‌ها و زمان‌بندی المان‌ها"
           >
-            <Layers size={14} />
-            <span>زمان‌بندی المان‌ها (In/Out)</span>
-            {showElementTracks ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
+            <Layers size={13} />
+            <span className="hidden sm:inline">زمان‌بندی المان‌ها (In/Out)</span>
+            <span className="sm:hidden">لایه‌ها</span>
+            {showElementTracks ? <ChevronDown size={13} /> : <ChevronUp size={13} />}
           </button>
 
-          <div className="hidden md:flex items-center gap-2 text-xs text-slate-500">
-            <Sparkles size={14} className="text-amber-400" />
-            <span>اسکراب بلادرنگ ۶۰ فریم</span>
+          <div className="hidden lg:flex items-center gap-1.5 text-xs text-slate-500">
+            <Sparkles size={13} className="text-amber-400" />
+            <span>اسکراب ۶۰ فریم</span>
           </div>
         </div>
       </div>

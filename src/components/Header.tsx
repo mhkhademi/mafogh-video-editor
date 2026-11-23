@@ -80,39 +80,39 @@ export const Header: React.FC<HeaderProps> = ({
   };
 
   return (
-    <header className="h-16 bg-slate-950 border-b border-slate-800 flex items-center justify-between px-6 select-none shrink-0 z-20">
+    <header className="h-14 xl:h-16 bg-slate-950 border-b border-slate-800 flex items-center justify-between px-3 md:px-5 select-none shrink-0 z-20 gap-2 min-w-0 overflow-x-auto">
       {/* Brand & Project Name */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2 md:gap-3.5 shrink-0">
         <a
           href="https://mafogh.com"
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center gap-3.5 group cursor-pointer hover:opacity-90 transition-opacity"
+          className="flex items-center gap-2 md:gap-3 group cursor-pointer hover:opacity-90 transition-opacity shrink-0"
           title="مشاهده وب‌سایت آژانس برندینگ مافوق (mafogh.com)"
         >
-          {/* Official Clean White Mafogh Logo (Includes both mark and wordmark) */}
+          {/* Official Clean White Mafogh Logo */}
           <img
             src="/mafogh-logo.svg"
             alt="آژانس برندینگ مافوق"
-            className="h-8 w-auto object-contain"
+            className="h-7 xl:h-8 w-auto object-contain shrink-0"
           />
 
-          <div className="flex flex-col justify-center border-r border-slate-800 pr-3.5">
+          <div className="flex flex-col justify-center border-r border-slate-800 pr-2.5 md:pr-3">
             <div className="flex items-center gap-1.5">
-              <span className="text-xs font-bold text-slate-100">
+              <span className="text-xs font-bold text-slate-100 whitespace-nowrap">
                 تدوینگر استودیویی
               </span>
               <span className="text-[10px] px-1.5 py-0.5 bg-[#6b0b45]/30 text-pink-300 rounded border border-[#6b0b45]/40 font-mono font-bold">
                 1080p
               </span>
             </div>
-            <span className="text-[10px] text-slate-400 group-hover:text-pink-300 transition-colors">
+            <span className="text-[10px] text-slate-400 group-hover:text-pink-300 transition-colors hidden 2xl:block whitespace-nowrap">
               آژانس برندینگ مافوق | mafogh.com
             </span>
           </div>
         </a>
 
-        <div className="h-6 w-px bg-slate-800"></div>
+        <div className="h-5 w-px bg-slate-800 hidden sm:block"></div>
 
         {/* Editable Title */}
         <input
@@ -120,13 +120,13 @@ export const Header: React.FC<HeaderProps> = ({
           value={project.title}
           onChange={(e) => onUpdateTitle(e.target.value)}
           placeholder="عنوان پروژه..."
-          className="bg-transparent hover:bg-slate-900 focus:bg-slate-900 border border-transparent hover:border-slate-800 focus:border-slate-700 rounded-lg px-2.5 py-1 text-sm font-medium text-slate-200 focus:outline-none transition-colors"
+          className="bg-transparent hover:bg-slate-900 focus:bg-slate-900 border border-transparent hover:border-slate-800 focus:border-slate-700 rounded-lg px-2 py-1 text-xs md:text-sm font-medium text-slate-200 focus:outline-none transition-all w-24 sm:w-32 md:w-40 lg:w-48 xl:w-56 truncate"
         />
 
-        <div className="h-6 w-px bg-slate-800"></div>
+        <div className="h-5 w-px bg-slate-800 hidden md:block"></div>
 
         {/* Undo / Redo Buttons */}
-        <div className="flex items-center gap-1 bg-slate-900 border border-slate-800 rounded-lg p-0.5">
+        <div className="flex items-center gap-0.5 bg-slate-900 border border-slate-800 rounded-lg p-0.5 shrink-0">
           <button
             onClick={onUndo}
             disabled={!canUndo}
@@ -137,7 +137,7 @@ export const Header: React.FC<HeaderProps> = ({
             }`}
             title="بازگشت به عقب (Ctrl+Z)"
           >
-            <Undo2 size={15} />
+            <Undo2 size={14} />
           </button>
           <button
             onClick={onRedo}
@@ -149,17 +149,17 @@ export const Header: React.FC<HeaderProps> = ({
             }`}
             title="انجام مجدد (Ctrl+Y)"
           >
-            <Redo2 size={15} />
+            <Redo2 size={14} />
           </button>
         </div>
 
-        <div className="h-6 w-px bg-slate-800"></div>
+        <div className="h-5 w-px bg-slate-800 hidden lg:block"></div>
 
         {/* Aspect Ratio Switcher */}
-        <div className="flex items-center bg-slate-900 border border-slate-800 rounded-lg p-0.5 text-xs shadow-inner">
+        <div className="flex items-center bg-slate-900 border border-slate-800 rounded-lg p-0.5 text-xs shadow-inner shrink-0">
           <button
             onClick={() => onSelectAspectRatio?.('16:9')}
-            className={`px-2.5 py-1 rounded-md flex items-center gap-1.5 transition-all cursor-pointer ${
+            className={`px-2 py-1 rounded-md flex items-center gap-1 transition-all cursor-pointer ${
               (project.aspectRatio || '16:9') === '16:9'
                 ? 'bg-[#6b0b45] text-white shadow font-bold'
                 : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
@@ -167,12 +167,12 @@ export const Header: React.FC<HeaderProps> = ({
             title="افقی ۱۶:۹ (یوتیوب، وب، دسکتاپ)"
           >
             <Monitor size={13} />
-            <span>16:9</span>
+            <span className="hidden xl:inline">16:9</span>
           </button>
 
           <button
             onClick={() => onSelectAspectRatio?.('9:16')}
-            className={`px-2.5 py-1 rounded-md flex items-center gap-1.5 transition-all cursor-pointer ${
+            className={`px-2 py-1 rounded-md flex items-center gap-1 transition-all cursor-pointer ${
               project.aspectRatio === '9:16'
                 ? 'bg-[#6b0b45] text-white shadow font-bold'
                 : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
@@ -180,12 +180,12 @@ export const Header: React.FC<HeaderProps> = ({
             title="عمودی ۹:۱۶ (استوری، ریلز اینستاگرام، شورتز)"
           >
             <Smartphone size={13} />
-            <span>9:16</span>
+            <span className="hidden xl:inline">9:16</span>
           </button>
 
           <button
             onClick={() => onSelectAspectRatio?.('1:1')}
-            className={`px-2.5 py-1 rounded-md flex items-center gap-1.5 transition-all cursor-pointer ${
+            className={`px-2 py-1 rounded-md flex items-center gap-1 transition-all cursor-pointer ${
               project.aspectRatio === '1:1'
                 ? 'bg-[#6b0b45] text-white shadow font-bold'
                 : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
@@ -193,12 +193,12 @@ export const Header: React.FC<HeaderProps> = ({
             title="مربعی ۱:۱ (پست اسلایدی اینستاگرام و لینکدین)"
           >
             <Square size={13} />
-            <span>1:1</span>
+            <span className="hidden xl:inline">1:1</span>
           </button>
 
           <button
             onClick={() => onSelectAspectRatio?.('4:5')}
-            className={`px-2.5 py-1 rounded-md flex items-center gap-1.5 transition-all cursor-pointer ${
+            className={`px-2 py-1 rounded-md flex items-center gap-1 transition-all cursor-pointer ${
               project.aspectRatio === '4:5'
                 ? 'bg-[#6b0b45] text-white shadow font-bold'
                 : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
@@ -206,33 +206,34 @@ export const Header: React.FC<HeaderProps> = ({
             title="عمودی پرتره ۴:۵ (پست‌های ویدیویی اینستاگرام)"
           >
             <RectangleVertical size={13} />
-            <span>4:5</span>
+            <span className="hidden xl:inline">4:5</span>
           </button>
         </div>
       </div>
 
       {/* Action Buttons */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2 md:gap-2.5 shrink-0">
         {/* AI Article-to-Video Button */}
         <button
           onClick={onOpenArticleModal}
-          className="px-3.5 py-1.5 bg-gradient-to-r from-[#6B0B45] via-[#A81970] to-[#D73697] hover:brightness-110 text-white rounded-xl text-xs font-extrabold flex items-center gap-2 shadow-lg shadow-pink-950/40 border border-pink-400/40 transition-all hover:scale-102 active:scale-95 cursor-pointer"
+          className="px-2.5 md:px-3 py-1.5 bg-gradient-to-r from-[#6B0B45] via-[#A81970] to-[#D73697] hover:brightness-110 text-white rounded-xl text-xs font-extrabold flex items-center gap-1.5 shadow-lg shadow-pink-950/40 border border-pink-400/40 transition-all hover:scale-102 active:scale-95 cursor-pointer shrink-0"
           title="تبدیل هوشمند مقالات وب‌سایت به ویدیو با هوش مصنوعی"
         >
-          <Sparkles size={14} className="text-pink-200 animate-pulse" />
-          <span>تولید ویدیو از مقاله ✨</span>
+          <Sparkles size={13} className="text-pink-200 animate-pulse shrink-0" />
+          <span className="hidden sm:inline">تولید ویدیو از مقاله ✨</span>
+          <span className="sm:hidden">ویدیو از مقاله ✨</span>
         </button>
 
         {/* Templates Dropdown */}
-        <div className="relative" ref={templatesRef}>
+        <div className="relative shrink-0" ref={templatesRef}>
           <button
             onClick={() => setIsTemplatesOpen(!isTemplatesOpen)}
-            className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-white rounded-lg text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer"
+            className="px-2.5 md:px-3 py-1.5 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-white rounded-lg text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer"
             title="انتخاب از قالب‌های آماده ویدیو"
           >
-            <BookOpen size={13} className="text-pink-400" />
-            <span>قالب‌های آماده</span>
-            <ChevronDown size={12} className={`transition-transform ${isTemplatesOpen ? 'rotate-180' : ''}`} />
+            <BookOpen size={13} className="text-pink-400 shrink-0" />
+            <span className="hidden sm:inline">قالب‌ها</span>
+            <ChevronDown size={12} className={`transition-transform shrink-0 ${isTemplatesOpen ? 'rotate-180' : ''}`} />
           </button>
 
           {isTemplatesOpen && (
@@ -303,42 +304,43 @@ export const Header: React.FC<HeaderProps> = ({
         />
         <button
           onClick={() => fileInputRef.current?.click()}
-          className="p-2 text-slate-400 hover:text-slate-200 hover:bg-slate-900 rounded-lg transition-colors cursor-pointer"
+          className="p-1.5 md:p-2 text-slate-400 hover:text-slate-200 hover:bg-slate-900 rounded-lg transition-colors cursor-pointer shrink-0"
           title="باز کردن فایل پروژه (Import JSON)"
         >
-          <Upload size={16} />
+          <Upload size={15} />
         </button>
 
         {/* Export JSON */}
         <button
           onClick={handleExportJSON}
-          className="p-2 text-slate-400 hover:text-slate-200 hover:bg-slate-900 rounded-lg transition-colors cursor-pointer"
+          className="p-1.5 md:p-2 text-slate-400 hover:text-slate-200 hover:bg-slate-900 rounded-lg transition-colors cursor-pointer shrink-0"
           title="ذخیره فایل پروژه (Save JSON)"
         >
-          <FileDown size={16} />
+          <FileDown size={15} />
         </button>
 
-        <div className="h-6 w-px bg-slate-800"></div>
+        <div className="h-5 w-px bg-slate-800 hidden sm:block shrink-0"></div>
 
         {/* Update Notification Pill */}
         {hasUpdate && (
           <button
             onClick={onOpenUpdateModal}
-            className="px-3 py-1.5 bg-gradient-to-r from-pink-600 via-rose-600 to-indigo-600 hover:from-pink-500 hover:to-indigo-500 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-lg shadow-pink-600/30 animate-pulse transition-all transform hover:scale-105 active:scale-95 cursor-pointer border border-pink-400/40"
+            className="px-2.5 py-1.5 bg-gradient-to-r from-pink-600 via-rose-600 to-indigo-600 hover:from-pink-500 hover:to-indigo-500 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-lg shadow-pink-600/30 animate-pulse transition-all transform hover:scale-105 active:scale-95 cursor-pointer border border-pink-400/40 shrink-0"
             title="نسخه جدید آماده نصب است، کلیک کنید"
           >
-            <Sparkles size={14} className="text-amber-300" />
-            <span>به‌روزرسانی جدید</span>
+            <Sparkles size={13} className="text-amber-300 shrink-0" />
+            <span className="hidden sm:inline">به‌روزرسانی</span>
           </button>
         )}
 
         {/* Export MP4 Video Button */}
         <button
           onClick={onOpenExportModal}
-          className="px-4 py-2 bg-gradient-to-r from-pink-600 to-indigo-600 hover:from-pink-500 hover:to-indigo-500 text-white rounded-xl text-xs font-bold flex items-center gap-2 shadow-lg shadow-pink-600/25 transition-all transform active:scale-95 cursor-pointer"
+          className="px-3 md:px-4 py-1.5 md:py-2 bg-gradient-to-r from-pink-600 to-indigo-600 hover:from-pink-500 hover:to-indigo-500 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 md:gap-2 shadow-lg shadow-pink-600/25 transition-all transform active:scale-95 cursor-pointer shrink-0"
         >
-          <Video size={16} />
-          <span>خروجی و رندر MP4</span>
+          <Video size={15} className="shrink-0" />
+          <span className="hidden sm:inline">خروجی و رندر MP4</span>
+          <span className="sm:hidden">رندر MP4</span>
         </button>
       </div>
     </header>

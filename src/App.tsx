@@ -249,8 +249,8 @@ export const App: React.FC = () => {
         }}
       />
 
-      {/* Main Workspace Workspace: Left Sidebar + Center Stage + Right Properties */}
-      <div className="flex-1 flex overflow-hidden relative">
+      {/* Main Workspace: Left Sidebar + Center Stage + Right Properties */}
+      <div className="flex-1 flex overflow-hidden relative min-w-0">
         {/* Left: PowerPoint-style Slide Thumbnails */}
         <SlideSidebar
           slides={project.slides}

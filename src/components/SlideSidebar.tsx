@@ -31,21 +31,21 @@ export const SlideSidebar: React.FC<SlideSidebarProps> = ({
   onUpdateDuration,
 }) => {
   return (
-    <aside className="w-80 bg-slate-900 border-l border-slate-800 flex flex-col h-full select-none shrink-0">
+    <aside className="w-60 lg:w-64 xl:w-72 2xl:w-80 bg-slate-900 border-l border-slate-800 flex flex-col h-full select-none shrink-0 transition-all">
       {/* Sidebar Header */}
-      <div className="p-4 border-b border-slate-800 flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2 min-w-0">
-          <span className="font-bold text-slate-100 text-sm truncate">صفحات ویدیو</span>
-          <span className="px-2 py-0.5 text-xs bg-slate-800 text-indigo-400 rounded-full font-mono font-bold shrink-0 border border-slate-700/60">
+      <div className="p-3 xl:p-4 border-b border-slate-800 flex items-center justify-between gap-2">
+        <div className="flex items-center gap-1.5 min-w-0">
+          <span className="font-bold text-slate-100 text-xs md:text-sm truncate">صفحات ویدیو</span>
+          <span className="px-1.5 py-0.5 text-[11px] bg-slate-800 text-indigo-400 rounded-full font-mono font-bold shrink-0 border border-slate-700/60">
             {slides.length}
           </span>
         </div>
         <button
           onClick={onAddSlide}
-          className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg transition-colors flex items-center gap-1.5 text-xs font-semibold shadow-sm cursor-pointer shrink-0"
+          className="px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg transition-colors flex items-center gap-1 text-xs font-semibold shadow-sm cursor-pointer shrink-0"
           title="افزودن اسلاید جدید"
         >
-          <Plus size={15} />
+          <Plus size={14} />
           <span>افزودن</span>
         </button>
       </div>
