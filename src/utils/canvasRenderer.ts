@@ -392,69 +392,103 @@ export function renderSlideToCanvas(
     ctx.restore();
   }
 
+function drawTintedImage(
+  ctx: CanvasRenderingContext2D,
+  img: HTMLImageElement,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  tintColor?: string
+) {
+  if (!tintColor) {
+    ctx.drawImage(img, x, y, w, h);
+    return;
+  }
+  try {
+    const offCanvas = document.createElement('canvas');
+    offCanvas.width = Math.max(1, Math.ceil(w));
+    offCanvas.height = Math.max(1, Math.ceil(h));
+    const offCtx = offCanvas.getContext('2d');
+    if (!offCtx) {
+      ctx.drawImage(img, x, y, w, h);
+      return;
+    }
+    offCtx.drawImage(img, 0, 0, w, h);
+    offCtx.globalCompositeOperation = 'source-in';
+    offCtx.fillStyle = tintColor;
+    offCtx.fillRect(0, 0, w, h);
+    ctx.drawImage(offCanvas, x, y);
+  } catch (_) {
+    ctx.drawImage(img, x, y, w, h);
+  }
+}
+
   // 4. Render Watermark
   if (watermark && watermark.enabled) {
     ctx.save();
-    ctx.globalAlpha = watermark.opacity ?? 0.9;
+    ctx.globalAlpha = watermark.opacity ?? 0.95;
     const pos = watermark.position || 'bottom-center';
-    const targetH = watermark.size ? watermark.size * 1.15 : 36;
+    const targetH = watermark.size ? watermark.size * 1.15 : 55;
     let wmX = width / 2;
     let wmY = height - 60;
 
-    const logoBrand = imageCache?.get('/mafogh-logo-brand.svg');
-    if (logoBrand && logoBrand.complete && logoBrand.naturalWidth > 0) {
-      const aspectRatio = logoBrand.naturalWidth / logoBrand.naturalHeight;
-      const targetW = targetH * aspectRatio;
+    if (watermark.type === 'text') {
+      const text = watermark.text || 'مافوق';
+      ctx.font = `900 ${Math.round(targetH * 0.9)}px 'Vazirmatn', sans-serif`;
+      ctx.fillStyle = watermark.color || '#6b0b45';
+      ctx.textBaseline = 'middle';
+      ctx.direction = 'rtl';
 
       if (pos === 'bottom-center') {
         wmX = width / 2;
         wmY = height - 60;
-        ctx.drawImage(logoBrand, wmX - targetW / 2, wmY - targetH / 2, targetW, targetH);
+        ctx.textAlign = 'center';
       } else if (pos === 'bottom-right') {
         wmX = width - 80;
         wmY = height - 60;
-        ctx.drawImage(logoBrand, wmX - targetW, wmY - targetH / 2, targetW, targetH);
+        ctx.textAlign = 'right';
       } else if (pos === 'bottom-left') {
         wmX = 80;
         wmY = height - 60;
-        ctx.drawImage(logoBrand, wmX, wmY - targetH / 2, targetW, targetH);
+        ctx.textAlign = 'left';
       } else if (pos === 'top-right') {
         wmX = width - 80;
         wmY = 60;
-        ctx.drawImage(logoBrand, wmX - targetW, wmY - targetH / 2, targetW, targetH);
+        ctx.textAlign = 'right';
       }
+      ctx.fillText(text, wmX, wmY);
     } else {
-      // Fallback: If SVG image is not cached, draw text and mark with correct Persian RTL alignment
-      // Mafogh emblem is on the RIGHT, text is on the LEFT
-      const logo = imageCache?.get('/favicon.svg');
-      if (logo && logo.complete && logo.naturalWidth > 0) {
-        const logoSize = targetH;
-        ctx.font = `900 ${Math.round(targetH * 0.9)}px 'Vazirmatn', sans-serif`;
-        const metrics = ctx.measureText(watermark.text || 'مافوق');
-        const textWidth = metrics.width;
-        const totalW = textWidth + 12 + logoSize;
+      const logoUrl = watermark.imageUrl || '/mafogh-logo-brand.svg';
+      const logoImg =
+        imageCache?.get(logoUrl) ||
+        imageCache?.get('/mafogh-logo-brand.svg') ||
+        imageCache?.get('/mafogh-logo.svg');
 
-        let startX = wmX - totalW / 2;
-        if (pos === 'bottom-right' || pos === 'top-right') {
-          startX = width - 80 - totalW;
-          wmY = pos === 'top-right' ? 60 : height - 60;
-        } else if (pos === 'bottom-left') {
-          startX = 80;
+      if (logoImg && logoImg.complete && logoImg.naturalWidth > 0) {
+        const aspectRatio = logoImg.naturalWidth / logoImg.naturalHeight;
+        const targetW = targetH * aspectRatio;
+
+        if (pos === 'bottom-center') {
+          wmX = width / 2;
           wmY = height - 60;
+          drawTintedImage(ctx, logoImg, wmX - targetW / 2, wmY - targetH / 2, targetW, targetH, watermark.color);
+        } else if (pos === 'bottom-right') {
+          wmX = width - 80;
+          wmY = height - 60;
+          drawTintedImage(ctx, logoImg, wmX - targetW, wmY - targetH / 2, targetW, targetH, watermark.color);
+        } else if (pos === 'bottom-left') {
+          wmX = 80;
+          wmY = height - 60;
+          drawTintedImage(ctx, logoImg, wmX, wmY - targetH / 2, targetW, targetH, watermark.color);
+        } else if (pos === 'top-right') {
+          wmX = width - 80;
+          wmY = 60;
+          drawTintedImage(ctx, logoImg, wmX - targetW, wmY - targetH / 2, targetW, targetH, watermark.color);
         }
-
-        // Text on the left
-        ctx.fillStyle = '#6b0b45';
-        ctx.textAlign = 'left';
-        ctx.textBaseline = 'middle';
-        ctx.direction = 'rtl';
-        ctx.fillText(watermark.text || 'مافوق', startX, wmY);
-
-        // Logo on the right
-        ctx.drawImage(logo, startX + textWidth + 12, wmY - logoSize / 2, logoSize, logoSize);
       } else {
         ctx.font = `900 ${Math.round(targetH * 0.9)}px 'Vazirmatn', sans-serif`;
-        ctx.fillStyle = '#6b0b45';
+        ctx.fillStyle = watermark.color || '#6b0b45';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.direction = 'rtl';

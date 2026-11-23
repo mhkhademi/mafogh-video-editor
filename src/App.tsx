@@ -35,6 +35,7 @@ export const App: React.FC = () => {
     moveSlide,
     addElement,
     updateElement,
+    updateWatermark,
     deleteElement,
     resetToTemplate,
     jumpToSlide,
@@ -287,7 +288,9 @@ export const App: React.FC = () => {
         <PropertiesPanel
           slide={activeSlide}
           selectedElement={selectedElement}
+          watermark={project.watermark}
           onUpdateSlide={(partial) => updateSlide(activeSlide.id, partial)}
+          onUpdateWatermark={updateWatermark}
           onAddElement={(type) => addElement(activeSlide.id, type)}
           onUpdateElement={(elementId, partial) =>
             updateElement(activeSlide.id, elementId, partial)

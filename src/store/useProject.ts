@@ -591,6 +591,21 @@ export function useProjectStore() {
     [slideTiming]
   );
 
+  // Update global watermark & logo config
+  const updateWatermark = useCallback(
+    (partial: Partial<Project['watermark']>) => {
+      saveSnapshot();
+      setProject((prev) => ({
+        ...prev,
+        watermark: {
+          ...prev.watermark,
+          ...partial,
+        },
+      }));
+    },
+    [saveSnapshot]
+  );
+
   return {
     project,
     setProject,
@@ -614,6 +629,7 @@ export function useProjectStore() {
     moveSlide,
     addElement,
     updateElement,
+    updateWatermark,
     undo,
     redo,
     canUndo: past.length > 0,

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Slide, SlideElement, ElementType, AnimationType } from '../types';
+import { Slide, SlideElement, ElementType, AnimationType, WatermarkConfig } from '../types';
 import { ColorPicker } from './ColorPicker';
 import { RangeSlider } from './RangeSlider';
 import {
@@ -42,7 +42,9 @@ import { getLucideIcon } from '../utils/iconRegistry';
 interface PropertiesPanelProps {
   slide: Slide;
   selectedElement: SlideElement | null;
+  watermark?: WatermarkConfig;
   onUpdateSlide: (partial: Partial<Slide>) => void;
+  onUpdateWatermark?: (partial: Partial<WatermarkConfig>) => void;
   onAddElement: (type: ElementType) => void;
   onUpdateElement: (elementId: string, partial: Partial<SlideElement>) => void;
   onDeleteElement: (elementId: string) => void;
@@ -59,7 +61,9 @@ interface PropertiesPanelProps {
 export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
   slide,
   selectedElement,
+  watermark,
   onUpdateSlide,
+  onUpdateWatermark,
   onAddElement,
   onUpdateElement,
   onDeleteElement,
@@ -241,6 +245,210 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                 <option value="none">بدون ترنزیشن (کات مستقیم)</option>
               </select>
             </div>
+
+            {/* ================= Watermark & Brand Logo Settings ================= */}
+            {watermark && onUpdateWatermark && (
+              <div className="border-t border-slate-800 pt-4 space-y-3.5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Sparkles size={16} className="text-pink-400" />
+                    <span className="text-xs font-bold text-slate-200">نشان و لوگوی ویدیو (Watermark)</span>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={watermark.enabled}
+                      onChange={(e) => onUpdateWatermark({ enabled: e.target.checked })}
+                      className="sr-only peer"
+                    />
+                    <div className="w-9 h-5 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-pink-600"></div>
+                  </label>
+                </div>
+
+                {watermark.enabled && (
+                  <div className="space-y-4 bg-slate-900/70 border border-slate-800 rounded-xl p-3.5 shadow-inner">
+                    {/* Preset Selector */}
+                    <div>
+                      <label className="block text-[11px] font-semibold text-slate-400 mb-1.5">نوع نشان تجاری</label>
+                      <div className="grid grid-cols-2 gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => onUpdateWatermark({ type: 'image', imageUrl: '/mafogh-logo-brand.svg', color: '' })}
+                          className={`py-1.5 px-2 rounded-lg text-xs font-medium border text-center transition-all ${
+                            watermark.type === 'image' && (!watermark.imageUrl || watermark.imageUrl.includes('brand'))
+                              ? 'border-pink-500 bg-pink-500/10 text-pink-300 font-bold'
+                              : 'border-slate-800 bg-slate-800/60 text-slate-400 hover:text-slate-200'
+                          }`}
+                        >
+                          رسمی مافوق (رنگی)
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => onUpdateWatermark({ type: 'image', imageUrl: '/mafogh-logo.svg', color: '#ffffff' })}
+                          className={`py-1.5 px-2 rounded-lg text-xs font-medium border text-center transition-all ${
+                            watermark.type === 'image' && watermark.imageUrl === '/mafogh-logo.svg'
+                              ? 'border-pink-500 bg-pink-500/10 text-pink-300 font-bold'
+                              : 'border-slate-800 bg-slate-800/60 text-slate-400 hover:text-slate-200'
+                          }`}
+                        >
+                          رسمی مافوق (سفید)
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            document.getElementById('custom-logo-upload')?.click();
+                          }}
+                          className={`py-1.5 px-2 rounded-lg text-xs font-medium border text-center transition-all ${
+                            watermark.type === 'image' && watermark.imageUrl && !watermark.imageUrl.startsWith('/mafogh')
+                              ? 'border-pink-500 bg-pink-500/10 text-pink-300 font-bold'
+                              : 'border-slate-800 bg-slate-800/60 text-slate-400 hover:text-slate-200'
+                          }`}
+                        >
+                          آپلود لوگوی دلخواه
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => onUpdateWatermark({ type: 'text', text: watermark.text || 'مافوق' })}
+                          className={`py-1.5 px-2 rounded-lg text-xs font-medium border text-center transition-all ${
+                            watermark.type === 'text'
+                              ? 'border-pink-500 bg-pink-500/10 text-pink-300 font-bold'
+                              : 'border-slate-800 bg-slate-800/60 text-slate-400 hover:text-slate-200'
+                          }`}
+                        >
+                          متن اختصاصی
+                        </button>
+                      </div>
+                      <input
+                        id="custom-logo-upload"
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            const reader = new FileReader();
+                            reader.onload = (ev) => {
+                              if (typeof ev.target?.result === 'string') {
+                                onUpdateWatermark({ type: 'image', imageUrl: ev.target.result });
+                              }
+                            };
+                            reader.readAsDataURL(file);
+                          }
+                        }}
+                      />
+                    </div>
+
+                    {/* Text Input if type === 'text' */}
+                    {watermark.type === 'text' && (
+                      <div>
+                        <label className="block text-[11px] font-semibold text-slate-400 mb-1">متن نشان</label>
+                        <input
+                          type="text"
+                          value={watermark.text || ''}
+                          onChange={(e) => onUpdateWatermark({ text: e.target.value })}
+                          className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-pink-500"
+                          placeholder="مثلاً: مافوق یا mafogh.com"
+                        />
+                      </div>
+                    )}
+
+                    {/* Logo Size (Scale) */}
+                    <div>
+                      <RangeSlider
+                        label="اندازه لوگو (مقیاس)"
+                        value={watermark.size || 48}
+                        min={20}
+                        max={120}
+                        step={2}
+                        unit="px"
+                        color="pink"
+                        onChange={(val) => onUpdateWatermark({ size: val })}
+                      />
+                      {/* Quick presets */}
+                      <div className="flex items-center gap-1.5 mt-1.5">
+                        {[
+                          { label: 'کوچک', val: 32 },
+                          { label: 'استاندارد', val: 48 },
+                          { label: 'بزرگ', val: 68 },
+                          { label: 'خیلی بزرگ', val: 92 },
+                        ].map((p) => (
+                          <button
+                            key={p.val}
+                            type="button"
+                            onClick={() => onUpdateWatermark({ size: p.val })}
+                            className={`flex-1 py-1 text-[10px] rounded border transition-colors ${
+                              (watermark.size || 48) === p.val
+                                ? 'border-pink-500 bg-pink-500/20 text-pink-300 font-bold'
+                                : 'border-slate-800 bg-slate-800/40 text-slate-400 hover:text-slate-200'
+                            }`}
+                          >
+                            {p.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Logo Color / Tint */}
+                    <div>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <label className="block text-[11px] font-semibold text-slate-400">رنگ لوگو / نشان</label>
+                        {watermark.color && (
+                          <button
+                            type="button"
+                            onClick={() => onUpdateWatermark({ color: '' })}
+                            className="text-[10px] text-pink-400 hover:text-pink-300 underline"
+                          >
+                            رنگ اصلی فایل
+                          </button>
+                        )}
+                      </div>
+                      <ColorPicker
+                        color={watermark.color || '#6B0B45'}
+                        onChange={(hex) => onUpdateWatermark({ color: hex })}
+                      />
+                    </div>
+
+                    {/* Logo Position */}
+                    <div>
+                      <label className="block text-[11px] font-semibold text-slate-400 mb-1.5">موقعیت قرارگیری</label>
+                      <div className="grid grid-cols-2 gap-1.5">
+                        {[
+                          { id: 'bottom-center', label: 'پایین - وسط' },
+                          { id: 'bottom-right', label: 'پایین - راست' },
+                          { id: 'bottom-left', label: 'پایین - چپ' },
+                          { id: 'top-right', label: 'بالا - راست' },
+                        ].map((pos) => (
+                          <button
+                            key={pos.id}
+                            type="button"
+                            onClick={() => onUpdateWatermark({ position: pos.id as any })}
+                            className={`py-1.5 px-2 rounded-lg text-xs font-medium border text-center transition-all ${
+                              watermark.position === pos.id
+                                ? 'border-pink-500 bg-pink-500/10 text-pink-300 font-bold'
+                                : 'border-slate-800 bg-slate-800/60 text-slate-400 hover:text-slate-200'
+                            }`}
+                          >
+                            {pos.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Logo Opacity */}
+                    <RangeSlider
+                      label="شفافیت (Opacity)"
+                      value={Math.round((watermark.opacity ?? 0.95) * 100)}
+                      min={10}
+                      max={100}
+                      step={5}
+                      unit="٪"
+                      color="indigo"
+                      onChange={(val) => onUpdateWatermark({ opacity: val / 100 })}
+                    />
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Quick Add Elements Palette */}
             <div className="border-t border-slate-800 pt-4">

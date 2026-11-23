@@ -273,7 +273,7 @@ export const CanvasStage: React.FC<CanvasStageProps> = ({
         {/* Branding Watermark (Persistent across slides like in "what is ltv.mp4") */}
         {watermark.enabled && (
           <div
-            className={`absolute flex items-center select-none pointer-events-none ${
+            className={`absolute flex items-center select-none pointer-events-none transition-all ${
               watermark.position === 'bottom-center'
                 ? 'bottom-10 left-1/2 -translate-x-1/2'
                 : watermark.position === 'bottom-right'
@@ -284,16 +284,44 @@ export const CanvasStage: React.FC<CanvasStageProps> = ({
             }`}
             style={{ opacity: watermark.opacity }}
           >
-            {/* Official Mafogh Brand Horizontal Lockup (Emblem on Right, Stylized Wordmark on Left) */}
-            <img
-              src="/mafogh-logo-brand.svg"
-              alt="مافوق"
-              className="object-contain"
-              style={{
-                height: `${(watermark.size || 32) * 1.15}px`,
-                width: 'auto',
-              }}
-            />
+            {watermark.type === 'text' ? (
+              <span
+                style={{
+                  fontSize: `${(watermark.size || 48) * 0.9}px`,
+                  color: watermark.color || '#6b0b45',
+                  fontWeight: 900,
+                  fontFamily: 'Vazirmatn, sans-serif',
+                }}
+              >
+                {watermark.text || 'مافوق'}
+              </span>
+            ) : watermark.color ? (
+              <div
+                style={{
+                  height: `${(watermark.size || 48) * 1.15}px`,
+                  width: `${(watermark.size || 48) * 1.15 * 3.3}px`,
+                  backgroundColor: watermark.color,
+                  WebkitMaskImage: `url("${watermark.imageUrl || '/mafogh-logo-brand.svg'}")`,
+                  maskImage: `url("${watermark.imageUrl || '/mafogh-logo-brand.svg'}")`,
+                  WebkitMaskSize: 'contain',
+                  maskSize: 'contain',
+                  WebkitMaskRepeat: 'no-repeat',
+                  maskRepeat: 'no-repeat',
+                  WebkitMaskPosition: 'center',
+                  maskPosition: 'center',
+                }}
+              />
+            ) : (
+              <img
+                src={watermark.imageUrl || '/mafogh-logo-brand.svg'}
+                alt={watermark.text || 'مافوق'}
+                className="object-contain"
+                style={{
+                  height: `${(watermark.size || 48) * 1.15}px`,
+                  width: 'auto',
+                }}
+              />
+            )}
           </div>
         )}
       </div>

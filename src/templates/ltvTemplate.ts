@@ -9,11 +9,13 @@ export const ltvTemplate: Project = {
   fps: 30,
   watermark: {
     enabled: true,
-    type: 'text',
+    type: 'image',
+    imageUrl: '/mafogh-logo-brand.svg',
     text: 'مافوق',
     position: 'bottom-center',
-    opacity: 0.9,
-    size: 28,
+    opacity: 0.95,
+    size: 48,
+    color: '',
   },
   slides: [
     {

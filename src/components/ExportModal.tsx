@@ -38,7 +38,11 @@ async function preloadProjectAssets(project: Project): Promise<Map<string, HTMLI
   });
 
   if (project.watermark?.enabled) {
+    if (project.watermark.imageUrl) {
+      urls.add(project.watermark.imageUrl);
+    }
     urls.add('/mafogh-logo-brand.svg');
+    urls.add('/mafogh-logo.svg');
     urls.add('/favicon.svg');
   }
 

@@ -95,6 +95,7 @@ export interface WatermarkConfig {
   position: 'bottom-center' | 'bottom-right' | 'bottom-left' | 'top-right';
   opacity: number;
   size?: number;
+  color?: string;
 }
 
 export interface AudioConfig {

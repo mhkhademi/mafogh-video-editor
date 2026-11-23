@@ -121,7 +121,7 @@ function cleanHtmlText(raw: string): string {
  * Intelligent Sentence Extractor:
  * Extracts a complete, natural, grammatically sound sentence without truncation or trailing '...'
  */
-function extractCleanSentence(raw: string, preferredMinLen = 40, maxLen = 160): string {
+function extractCleanSentence(raw: string, preferredMinLen = 35, maxLen = 220): string {
   if (!raw) return '';
 
   // Clean starting conjunctions that sound disjointed
@@ -134,48 +134,72 @@ function extractCleanSentence(raw: string, preferredMinLen = 40, maxLen = 160): 
     .replace(/^در\s+نتیجه[،,]\s*/, '')
     .trim();
 
-  // Split into sentences using Persian/Arabic and English sentence delimiters
+  // Split into real sentences using Persian/Arabic and English sentence delimiters
   const sentences = text
-    .split(/(?<=[.!?؟؛\n])\s+/)
+    .split(/(?<=[.!?؟\n])\s+/)
     .map((s) => s.trim())
-    .filter((s) => s.length > 25);
+    .filter((s) => s.length >= 25);
 
+  for (const s of sentences) {
+    if (s.length >= preferredMinLen && s.length <= maxLen) {
+      let clean = s.replace(/[؛:،,]$/, '').trim();
+      if (!clean.endsWith('.') && !clean.endsWith('!') && !clean.endsWith('؟')) {
+        clean += '.';
+      }
+      return clean;
+    }
+  }
+
+  // If a sentence is longer than maxLen, check if it can be neatly split by semicolon (؛) or colon (:)
   if (sentences.length > 0) {
-    for (const s of sentences) {
-      if (s.length >= preferredMinLen && s.length <= maxLen) {
-        let clean = s.replace(/[؛:،,]$/, '').trim();
+    const s = sentences[0];
+    const subClauses = s.split(/(?<=[؛:])\s+/).filter((c) => c.trim().length >= preferredMinLen);
+    for (const clause of subClauses) {
+      if (clause.length <= maxLen) {
+        let clean = clause.replace(/[؛:،,]$/, '').trim();
         if (!clean.endsWith('.') && !clean.endsWith('!') && !clean.endsWith('؟')) {
           clean += '.';
         }
         return clean;
       }
     }
-
-    // Take the most complete sentence
-    let candidate = sentences[0];
-    if (candidate.length > maxLen) {
-      const lastSpace = candidate.lastIndexOf(' ', maxLen);
-      if (lastSpace > 35) {
-        candidate = candidate.slice(0, lastSpace);
+    // If within 260 chars, keep whole sentence intact rather than cutting off
+    if (s.length <= 260) {
+      let clean = s.replace(/[؛:،,]$/, '').trim();
+      if (!clean.endsWith('.') && !clean.endsWith('!') && !clean.endsWith('؟')) {
+        clean += '.';
+      }
+      return clean;
+    }
+    // Split by comma
+    const commaParts = s.split(/(?<=[،,])\s+/);
+    let accum = '';
+    for (const part of commaParts) {
+      if ((accum + ' ' + part).length <= maxLen) {
+        accum = accum ? `${accum} ${part}` : part;
+      } else {
+        break;
       }
     }
-    candidate = candidate.replace(/[؛:،,]$/, '').trim();
-    if (!candidate.endsWith('.') && !candidate.endsWith('!') && !candidate.endsWith('؟')) {
-      candidate += '.';
+    if (accum.length >= preferredMinLen) {
+      let clean = accum.replace(/[؛:،,]$/, '').trim();
+      if (!clean.endsWith('.') && !clean.endsWith('!') && !clean.endsWith('؟')) {
+        clean += '.';
+      }
+      return clean;
     }
-    return candidate;
   }
 
-  let fallback = text.slice(0, maxLen);
-  const lastSpace = fallback.lastIndexOf(' ');
-  if (lastSpace > 30) {
-    fallback = fallback.slice(0, lastSpace);
+  // Fallback without awkward cuts
+  let clean = text.replace(/[؛:،,]$/, '').trim();
+  if (clean.length > maxLen) {
+    clean = clean.slice(0, maxLen).replace(/\s+\S*$/, '');
   }
-  fallback = fallback.replace(/[؛:،,]$/, '').trim();
-  if (!fallback.endsWith('.') && !fallback.endsWith('!') && !fallback.endsWith('؟')) {
-    fallback += '.';
+  clean = clean.replace(/[؛:،,]$/, '').trim();
+  if (!clean.endsWith('.') && !clean.endsWith('!') && !clean.endsWith('؟')) {
+    clean += '.';
   }
-  return fallback;
+  return clean;
 }
 
 /**
