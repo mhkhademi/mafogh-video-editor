@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { Video, Download, Upload, Sparkles, Film, FileDown, Monitor, Smartphone, Square, RectangleVertical, Undo2, Redo2, ChevronDown, BookOpen, Layers, Music } from 'lucide-react';
+import { Video, Download, Upload, Sparkles, Film, FileDown, Monitor, Smartphone, Square, RectangleVertical, Undo2, Redo2, ChevronDown, BookOpen, Layers, Music, RefreshCw } from 'lucide-react';
 import { Project, AspectRatioType } from '../types';
 import { articleTipsTemplate, articleProblemSolutionTemplate } from '../templates/articleTemplates';
 
@@ -19,6 +19,8 @@ interface HeaderProps {
   onOpenAudioModal?: () => void;
   hasUpdate?: boolean;
   onOpenUpdateModal?: () => void;
+  onCheckForUpdates?: () => void;
+  isCheckingUpdate?: boolean;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -37,6 +39,8 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenAudioModal,
   hasUpdate = false,
   onOpenUpdateModal,
+  onCheckForUpdates,
+  isCheckingUpdate = false,
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isTemplatesOpen, setIsTemplatesOpen] = useState(false);
@@ -313,6 +317,30 @@ export const Header: React.FC<HeaderProps> = ({
                 <span className="font-bold text-slate-300">📊 قالب نمونه LTV</span>
                 <span className="text-[10px] text-slate-400">پرزنتیشن آموزشی کامل شاخص LTV</span>
               </button>
+
+              <div className="h-px bg-slate-800/80 my-1" />
+
+              <button
+                type="button"
+                onClick={() => {
+                  setIsTemplatesOpen(false);
+                  onCheckForUpdates?.();
+                }}
+                disabled={isCheckingUpdate}
+                className="w-full text-right p-2 rounded-lg hover:bg-slate-800/80 text-xs text-slate-200 flex items-center justify-between cursor-pointer transition-colors"
+              >
+                <div className="flex items-center gap-1.5">
+                  <RefreshCw size={12} className={`text-indigo-400 shrink-0 ${isCheckingUpdate ? 'animate-spin' : ''}`} />
+                  <span className="font-semibold text-slate-300">
+                    {isCheckingUpdate ? 'در حال بررسی نسخه...' : 'بررسی به‌روزرسانی تدوینگر'}
+                  </span>
+                </div>
+                {hasUpdate && (
+                  <span className="text-[10px] bg-pink-500/25 text-pink-300 px-1.5 py-0.5 rounded-full font-bold">
+                    نسخه جدید!
+                  </span>
+                )}
+              </button>
             </div>
           )}
         </div>
@@ -344,15 +372,24 @@ export const Header: React.FC<HeaderProps> = ({
 
         <div className="h-5 w-px bg-slate-800 hidden sm:block shrink-0"></div>
 
-        {/* Update Notification Pill */}
-        {hasUpdate && (
+        {/* Update Notification Pill or Check Button */}
+        {hasUpdate ? (
           <button
             onClick={onOpenUpdateModal}
             className="px-2.5 py-1.5 bg-gradient-to-r from-pink-600 via-rose-600 to-indigo-600 hover:from-pink-500 hover:to-indigo-500 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-lg shadow-pink-600/30 animate-pulse transition-all transform hover:scale-105 active:scale-95 cursor-pointer border border-pink-400/40 shrink-0"
-            title="نسخه جدید آماده نصب است، کلیک کنید"
+            title="نسخه جدید آماده نصب است، برای مشاهده تغییرات و نصب کلیک کنید"
           >
             <Sparkles size={13} className="text-amber-300 shrink-0" />
             <span className="hidden sm:inline">به‌روزرسانی</span>
+          </button>
+        ) : (
+          <button
+            onClick={onCheckForUpdates}
+            disabled={isCheckingUpdate}
+            className="p-1.5 md:p-2 text-slate-400 hover:text-slate-200 hover:bg-slate-900 rounded-lg transition-colors cursor-pointer shrink-0"
+            title={isCheckingUpdate ? 'در حال بررسی به‌روزرسانی...' : 'بررسی وضعیت به‌روزرسانی'}
+          >
+            <RefreshCw size={14} className={isCheckingUpdate ? 'animate-spin text-pink-400' : ''} />
           </button>
         )}
 

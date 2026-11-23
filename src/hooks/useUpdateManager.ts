@@ -2,6 +2,36 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import confetti from 'canvas-confetti';
 import { UpdateInfo } from '../components/UpdateModal';
 
+// Resilient API request that tests relative origin, port 3000 (SimpleWebServer) and port 3001 (Node backend)
+async function requestUpdateApi(endpoint: string, options?: RequestInit): Promise<Response> {
+  const currentOrigin = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000';
+  const urlsToTry = [
+    endpoint, // relative URL (e.g. /api/updates/check)
+    `${currentOrigin}${endpoint}`,
+    `http://localhost:3000${endpoint}`,
+    `http://localhost:3001${endpoint}`,
+  ];
+
+  const uniqueUrls = Array.from(new Set(urlsToTry.map((u) => (u.startsWith('http') ? u : `${currentOrigin}${u}`))));
+
+  let lastError: any = null;
+  for (const url of uniqueUrls) {
+    try {
+      const res = await fetch(url, {
+        ...options,
+        signal: AbortSignal.timeout(7000),
+      });
+      if (res.ok) {
+        return res;
+      }
+    } catch (e) {
+      lastError = e;
+    }
+  }
+
+  throw lastError || new Error(`ارتباط با سرور به‌روزرسانی (${endpoint}) برقرار نشد.`);
+}
+
 export function useUpdateManager() {
   const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(null);
   const [isChecking, setIsChecking] = useState<boolean>(false);
@@ -11,14 +41,83 @@ export function useUpdateManager() {
   const [updateError, setUpdateError] = useState<string | null>(null);
   const forceUpdateTriggeredRef = useRef(false);
 
-  // Check for updates against backend
+  // Check for updates
   const checkForUpdates = useCallback(async (manual: boolean = false) => {
     try {
       setIsChecking(true);
       setUpdateError(null);
-      const res = await fetch('http://localhost:3001/api/updates/check');
-      if (!res.ok) throw new Error(`HTTP error ${res.status}`);
-      const data: UpdateInfo = await res.json();
+
+      let data: UpdateInfo | null = null;
+
+      // 1. Try local server endpoints (SimpleWebServer on port 3000 or Node backend on port 3001)
+      try {
+        const res = await requestUpdateApi('/api/updates/check');
+        data = await res.json();
+      } catch (localErr) {
+        console.warn('Local update server not responding, falling back to direct GitHub API check...', localErr);
+      }
+
+      // 2. Direct browser GitHub fallback if local API was unavailable or returned an error
+      if (!data || (data as any).error) {
+        try {
+          // Read local version from /version.txt
+          let localSha = 'initial';
+          try {
+            const vRes = await fetch('/version.txt', { signal: AbortSignal.timeout(3000) });
+            if (vRes.ok) {
+              localSha = (await vRes.text()).trim();
+            }
+          } catch (_) {}
+
+          // Query GitHub REST API directly
+          const ghRes = await fetch('https://api.github.com/repos/mhkhademi/mafogh-video-editor/commits/main', {
+            headers: { Accept: 'application/vnd.github.v3+json' },
+            signal: AbortSignal.timeout(8000),
+          });
+
+          if (ghRes.ok) {
+            const gh = await ghRes.json();
+            const remoteSha = gh.sha || '';
+            const commitMsg = gh.commit?.message || '';
+            const author = gh.commit?.author?.name || 'تیم تدوینگر مافوق';
+            const dateStr = gh.commit?.author?.date || '';
+
+            const hasUpdate = !!remoteSha && remoteSha.toLowerCase() !== localSha.toLowerCase();
+            const lower = commitMsg.toLowerCase();
+            const isForce =
+              lower.includes('[force]') ||
+              lower.includes('[critical]') ||
+              lower.includes('[اجباری]') ||
+              lower.includes('force-update');
+
+            data = {
+              hasUpdate,
+              isForce,
+              isOffline: false,
+              current: {
+                hash: localSha,
+                short: localSha.slice(0, 7) || 'initial',
+              },
+              latest: hasUpdate
+                ? {
+                    hash: remoteSha,
+                    short: remoteSha.slice(0, 7),
+                    message: commitMsg.split('\n')[0],
+                    author,
+                    date: dateStr ? new Date(dateStr).toLocaleDateString('fa-IR') : '',
+                  }
+                : null,
+            };
+          }
+        } catch (ghErr) {
+          console.warn('Direct GitHub API check also failed:', ghErr);
+        }
+      }
+
+      if (!data) {
+        throw new Error('امکان دریافت اطلاعات نسخه از سرور یا گیت‌هاب وجود ندارد.');
+      }
+
       setUpdateInfo(data);
 
       if (data.hasUpdate) {
@@ -32,16 +131,15 @@ export function useUpdateManager() {
             }, 600);
           }
         } else if (manual) {
-          // If user manually clicked "بررسی به‌روزرسانی", open modal right away
           setIsModalOpen(true);
         }
       } else if (manual) {
-        alert('شما در حال استفاده از آخرین نسخه تدوینگر مافوق هستید.');
+        alert('شما در حال حاضر از آخرین نسخه تدوینگر مافوق استفاده می‌کنید.');
       }
     } catch (err: any) {
       console.warn('Update check failed:', err);
       if (manual) {
-        alert('خطا در بررسی به‌روزرسانی. لطفاً اتصال اینترنت خود را بررسی کنید.');
+        alert(err.message || 'خطا در بررسی به‌روزرسانی. لطفاً اتصال اینترنت خود را بررسی کنید.');
       }
     } finally {
       setIsChecking(false);
@@ -55,14 +153,14 @@ export function useUpdateManager() {
       setUpdateError(null);
       setUpdateStatus('در حال دریافت آخرین نسخه از گیت‌هاب...');
 
-      const res = await fetch('http://localhost:3001/api/updates/apply', {
+      const res = await requestUpdateApi('/api/updates/apply', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
       });
 
-      if (!res.ok) {
-        const errJson = await res.json().catch(() => ({}));
-        throw new Error(errJson.details || errJson.error || 'خطا در اعمال به‌روزرسانی');
+      const json = await res.json().catch(() => ({}));
+      if (json.success === false) {
+        throw new Error(json.error || json.details || 'خطا در اعمال به‌روزرسانی');
       }
 
       setUpdateStatus('تغییرات با موفقیت اعمال شد!');
@@ -94,10 +192,10 @@ export function useUpdateManager() {
   useEffect(() => {
     checkForUpdates();
 
-    // Check periodically every 10 minutes
+    // Check periodically every 5 minutes
     const interval = setInterval(() => {
       checkForUpdates();
-    }, 10 * 60 * 1000);
+    }, 5 * 60 * 1000);
 
     return () => clearInterval(interval);
   }, [checkForUpdates]);

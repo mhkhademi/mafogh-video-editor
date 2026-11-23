@@ -106,10 +106,12 @@ export const App: React.FC = () => {
   // Intelligent In-App Auto-Update Manager
   const {
     updateInfo,
+    isChecking: isCheckingUpdate,
     isUpdating,
     isModalOpen: isUpdateModalOpen,
     updateStatus,
     updateError,
+    checkForUpdates,
     applyUpdate,
     openModal: openUpdateModal,
     closeModal: closeUpdateModal,
@@ -289,6 +291,8 @@ export const App: React.FC = () => {
         onSelectAspectRatio={setAspectRatio}
         hasUpdate={Boolean(updateInfo?.hasUpdate)}
         onOpenUpdateModal={openUpdateModal}
+        onCheckForUpdates={() => checkForUpdates(true)}
+        isCheckingUpdate={isCheckingUpdate}
         onImportProject={(imported) => {
           setProject(imported);
           if (imported.slides?.[0]?.id) {
