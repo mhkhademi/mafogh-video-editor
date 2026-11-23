@@ -39,7 +39,7 @@ export const AUDIO_PRESETS: AudioPreset[] = [
     nameFa: 'مینیمال شرکتی و تجاری',
     nameEn: 'Corporate Minimal',
     desc: 'پیانو و پد گرم هارمونیک، بسیار مناسب پرزنتیشن‌ها و برندینگ',
-    url: '/audio/corporate-minimal.wav',
+    url: '/audio/corporate-minimal.mp3',
     tags: ['کسب‌وکار', 'پیانو', 'ملایم'],
   },
   {
@@ -47,7 +47,7 @@ export const AUDIO_PRESETS: AudioPreset[] = [
     nameFa: 'تکنولوژی و دیجیتال',
     nameEn: 'Tech Ambient',
     desc: 'نبض متمرکز و شفاف با آرپژ مدرن، ایده‌آل برای مباحث فناوری و نرم‌افزار',
-    url: '/audio/tech-ambient.wav',
+    url: '/audio/tech-ambient.mp3',
     tags: ['فناوری', 'نبض مدرن', 'شفاف'],
   },
   {
@@ -55,7 +55,7 @@ export const AUDIO_PRESETS: AudioPreset[] = [
     nameFa: 'تمرکز عمیق و لوفای',
     nameEn: 'Deep Focus',
     desc: 'آکوردهای آرامش‌بخش با فیلتر تنفسی، عالی برای مطالعه و مقالات راهبردی',
-    url: '/audio/deep-focus.wav',
+    url: '/audio/deep-focus.mp3',
     tags: ['آموزش', 'لوفای', 'تمرکز'],
   },
   {
@@ -63,7 +63,7 @@ export const AUDIO_PRESETS: AudioPreset[] = [
     nameFa: 'رشد و الهام‌بخش',
     nameEn: 'Inspiring Growth',
     desc: 'آکوستیک زنگوله‌ای و صعودی، مثبت و پرانرژی برای معرفی خدمات و راهکارها',
-    url: '/audio/inspiring-growth.wav',
+    url: '/audio/inspiring-growth.mp3',
     tags: ['الهام‌بخش', 'انرژی مثبت', 'صعودی'],
   },
 ];
