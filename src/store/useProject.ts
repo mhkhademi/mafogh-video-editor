@@ -613,6 +613,18 @@ export function useProjectStore() {
     [saveSnapshot]
   );
 
+  // Update global audio & music config
+  const updateAudio = useCallback(
+    (audioConfig?: Project['audio']) => {
+      saveSnapshot();
+      setProject((prev) => ({
+        ...prev,
+        audio: audioConfig,
+      }));
+    },
+    [saveSnapshot]
+  );
+
   return {
     project,
     setProject,
@@ -637,6 +649,7 @@ export function useProjectStore() {
     addElement,
     updateElement,
     updateWatermark,
+    updateAudio,
     undo,
     redo,
     canUndo: past.length > 0,

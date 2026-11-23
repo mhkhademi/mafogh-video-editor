@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Slide, SlideElement, ElementType, AnimationType, WatermarkConfig } from '../types';
+import { Slide, SlideElement, ElementType, AnimationType, WatermarkConfig, AudioConfig } from '../types';
 import { ColorPicker } from './ColorPicker';
 import { RangeSlider } from './RangeSlider';
 import {
@@ -13,6 +13,7 @@ import {
   Palette,
   Clock,
   Sliders,
+  Music,
   AlignRight,
   AlignCenter,
   AlignLeft,
@@ -43,8 +44,11 @@ interface PropertiesPanelProps {
   slide: Slide;
   selectedElement: SlideElement | null;
   watermark?: WatermarkConfig;
+  projectAudio?: AudioConfig;
   onUpdateSlide: (partial: Partial<Slide>) => void;
   onUpdateWatermark?: (partial: Partial<WatermarkConfig>) => void;
+  onUpdateAudio?: (audio?: AudioConfig) => void;
+  onOpenAudioModal?: () => void;
   onAddElement: (type: ElementType) => void;
   onUpdateElement: (elementId: string, partial: Partial<SlideElement>) => void;
   onDeleteElement: (elementId: string) => void;
@@ -62,8 +66,11 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
   slide,
   selectedElement,
   watermark,
+  projectAudio,
   onUpdateSlide,
   onUpdateWatermark,
+  onUpdateAudio,
+  onOpenAudioModal,
   onAddElement,
   onUpdateElement,
   onDeleteElement,
@@ -327,6 +334,54 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                 </div>
               </div>
             )}
+
+            {/* Background Audio Quick Section */}
+            <div className="border-t border-slate-800 pt-3.5 space-y-2.5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5">
+                  <Music size={14} className="text-pink-400" />
+                  <span className="text-xs font-bold text-slate-200">موزیک و زیرصدای ویدیو</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={onOpenAudioModal}
+                  className="text-[11px] font-bold text-pink-400 hover:text-pink-300 transition-colors cursor-pointer"
+                >
+                  {projectAudio?.url ? 'تغییر موزیک ⚙️' : '+ انتخاب موزیک'}
+                </button>
+              </div>
+
+              {projectAudio?.url ? (
+                <div className="p-3 bg-slate-900/70 border border-slate-800 rounded-xl space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-white truncate max-w-[170px]">
+                      🎵 {projectAudio.name || 'موزیک زیرصدا'}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => onUpdateAudio?.(undefined)}
+                      className="text-[10px] text-rose-400 hover:text-rose-300 cursor-pointer"
+                    >
+                      قطع موزیک
+                    </button>
+                  </div>
+                  <RangeSlider
+                    label="میزان بلندی زیرصدا"
+                    value={Math.round((projectAudio.volume ?? 0.35) * 100)}
+                    min={5}
+                    max={100}
+                    step={5}
+                    unit="٪"
+                    color="pink"
+                    onChange={(val) => onUpdateAudio?.({ ...projectAudio, volume: val / 100 })}
+                  />
+                </div>
+              ) : (
+                <p className="text-[11px] text-slate-400 leading-relaxed">
+                  موزیک زیرصدا برای این ویدیو فعال نیست. با کلیک روی «+ انتخاب موزیک» می‌توانید یک تِرک آماده یا فایل دلخواه قرار دهید.
+                </p>
+              )}
+            </div>
 
             {/* ================= Watermark & Brand Logo Settings ================= */}
             {watermark && onUpdateWatermark && (

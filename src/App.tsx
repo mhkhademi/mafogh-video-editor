@@ -10,6 +10,7 @@ import { ExportModal } from './components/ExportModal';
 import { IconPickerModal } from './components/IconPickerModal';
 import { UpdateModal } from './components/UpdateModal';
 import { ArticleToVideoModal } from './components/ArticleToVideoModal';
+import { AudioSettingsModal } from './components/AudioSettingsModal';
 import { useUpdateManager } from './hooks/useUpdateManager';
 
 export const App: React.FC = () => {
@@ -36,6 +37,7 @@ export const App: React.FC = () => {
     addElement,
     updateElement,
     updateWatermark,
+    updateAudio,
     deleteElement,
     resetToTemplate,
     jumpToSlide,
@@ -56,6 +58,50 @@ export const App: React.FC = () => {
   const [isIconPickerOpen, setIsIconPickerOpen] = useState<boolean>(false);
   const [iconPickerMode, setIconPickerMode] = useState<'new' | 'replace'>('new');
   const [isArticleModalOpen, setIsArticleModalOpen] = useState<boolean>(false);
+  const [isAudioModalOpen, setIsAudioModalOpen] = useState<boolean>(false);
+  const bgAudioRef = React.useRef<HTMLAudioElement | null>(null);
+
+  // Synchronize background audio playback with timeline state
+  useEffect(() => {
+    const audioUrl = project.audio?.url;
+    if (!audioUrl) {
+      if (bgAudioRef.current) {
+        bgAudioRef.current.pause();
+        bgAudioRef.current.src = '';
+      }
+      return;
+    }
+
+    if (!bgAudioRef.current) {
+      bgAudioRef.current = new Audio();
+    }
+
+    const audio = bgAudioRef.current;
+    if (!audio.src.endsWith(audioUrl) && audio.src !== audioUrl) {
+      audio.src = audioUrl;
+    }
+    audio.volume = Math.max(0, Math.min(1, project.audio.volume ?? 0.35));
+    audio.loop = project.audio.loop ?? true;
+
+    if (isPlaying) {
+      if (audio.duration && Number.isFinite(audio.duration) && audio.duration > 0) {
+        const targetTime = currentTime % audio.duration;
+        if (Math.abs(audio.currentTime - targetTime) > 0.4) {
+          audio.currentTime = targetTime;
+        }
+      }
+      audio.play().catch(() => {});
+    } else {
+      audio.pause();
+    }
+  }, [isPlaying, project.audio?.url, project.audio?.volume, project.audio?.loop]);
+
+  // Seek synchronization while paused
+  useEffect(() => {
+    if (!isPlaying && bgAudioRef.current && bgAudioRef.current.duration && Number.isFinite(bgAudioRef.current.duration)) {
+      bgAudioRef.current.currentTime = currentTime % bgAudioRef.current.duration;
+    }
+  }, [currentTime, isPlaying]);
 
   // Intelligent In-App Auto-Update Manager
   const {
@@ -238,6 +284,7 @@ export const App: React.FC = () => {
           }
         }}
         onOpenArticleModal={() => setIsArticleModalOpen(true)}
+        onOpenAudioModal={() => setIsAudioModalOpen(true)}
         onOpenExportModal={() => setIsExportModalOpen(true)}
         onSelectAspectRatio={setAspectRatio}
         hasUpdate={Boolean(updateInfo?.hasUpdate)}
@@ -289,8 +336,11 @@ export const App: React.FC = () => {
           slide={activeSlide}
           selectedElement={selectedElement}
           watermark={project.watermark}
+          projectAudio={project.audio}
           onUpdateSlide={(partial) => updateSlide(activeSlide.id, partial)}
           onUpdateWatermark={updateWatermark}
+          onUpdateAudio={updateAudio}
+          onOpenAudioModal={() => setIsAudioModalOpen(true)}
           onAddElement={(type) => addElement(activeSlide.id, type)}
           onUpdateElement={(elementId, partial) =>
             updateElement(activeSlide.id, elementId, partial)
@@ -388,6 +438,14 @@ export const App: React.FC = () => {
           }
         }}
         currentAspectRatio={project.aspectRatio}
+      />
+
+      {/* Background Audio / Music Settings Modal */}
+      <AudioSettingsModal
+        isOpen={isAudioModalOpen}
+        onClose={() => setIsAudioModalOpen(false)}
+        currentAudio={project.audio}
+        onSaveAudio={updateAudio}
       />
     </div>
   );

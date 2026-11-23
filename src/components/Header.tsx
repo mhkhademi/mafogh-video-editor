@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { Video, Download, Upload, Sparkles, Film, FileDown, Monitor, Smartphone, Square, RectangleVertical, Undo2, Redo2, ChevronDown, BookOpen, Layers } from 'lucide-react';
+import { Video, Download, Upload, Sparkles, Film, FileDown, Monitor, Smartphone, Square, RectangleVertical, Undo2, Redo2, ChevronDown, BookOpen, Layers, Music } from 'lucide-react';
 import { Project, AspectRatioType } from '../types';
 import { articleTipsTemplate, articleProblemSolutionTemplate } from '../templates/articleTemplates';
 
@@ -16,6 +16,7 @@ interface HeaderProps {
   onOpenExportModal: () => void;
   onImportProject: (imported: Project) => void;
   onSelectAspectRatio?: (ratio: AspectRatioType) => void;
+  onOpenAudioModal?: () => void;
   hasUpdate?: boolean;
   onOpenUpdateModal?: () => void;
 }
@@ -33,6 +34,7 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenExportModal,
   onImportProject,
   onSelectAspectRatio,
+  onOpenAudioModal,
   hasUpdate = false,
   onOpenUpdateModal,
 }) => {
@@ -222,6 +224,27 @@ export const Header: React.FC<HeaderProps> = ({
           <Sparkles size={13} className="text-pink-200 animate-pulse shrink-0" />
           <span className="hidden sm:inline">تولید ویدیو از مقاله ✨</span>
           <span className="sm:hidden">ویدیو از مقاله ✨</span>
+        </button>
+
+        {/* Background Music Button */}
+        <button
+          onClick={onOpenAudioModal}
+          className={`px-2.5 md:px-3 py-1.5 border rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer shrink-0 ${
+            project.audio?.url
+              ? 'bg-pink-950/40 border-pink-500/60 text-pink-300 shadow-sm'
+              : 'bg-slate-900 hover:bg-slate-800 border-slate-800 text-slate-300 hover:text-white'
+          }`}
+          title="تنظیمات موزیک و زیرصدای ویدیو"
+        >
+          <Music size={13} className={project.audio?.url ? 'text-pink-400' : 'text-slate-400'} />
+          <span className="hidden sm:inline">
+            {project.audio?.url ? (project.audio.name || 'موزیک فعال') : 'موزیک زیرصدا'}
+          </span>
+          {project.audio?.url && (
+            <span className="text-[10px] px-1 rounded bg-pink-500/30 text-pink-200">
+              {Math.round((project.audio.volume ?? 0.35) * 100)}٪
+            </span>
+          )}
         </button>
 
         {/* Templates Dropdown */}

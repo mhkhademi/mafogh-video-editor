@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { X, Video, Download, CheckCircle, Loader2, HardDrive, AlertCircle, Clock, Zap, Cpu } from 'lucide-react';
+import { X, Video, Download, CheckCircle, Loader2, HardDrive, AlertCircle, Clock, Zap, Cpu, Music } from 'lucide-react';
 import { Muxer, ArrayBufferTarget } from 'mp4-muxer';
 import { Project } from '../types';
 import { renderSlideToCanvas } from '../utils/canvasRenderer';
@@ -598,6 +598,32 @@ export const ExportModal: React.FC<ExportModalProps> = ({
       setRenderStatusText('در حال ضبط خروجی از طریق مرورگر (Client Fallback)...');
       try {
         const stream = canvas.captureStream(fps);
+        let audioContext: AudioContext | null = null;
+        let audioSource: AudioBufferSourceNode | null = null;
+
+        if (project.audio?.url) {
+          try {
+            audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+            const res = await fetch(project.audio.url);
+            const arrayBuf = await res.arrayBuffer();
+            const decoded = await audioContext.decodeAudioData(arrayBuf);
+            audioSource = audioContext.createBufferSource();
+            audioSource.buffer = decoded;
+            audioSource.loop = project.audio.loop ?? true;
+            const gain = audioContext.createGain();
+            gain.gain.value = project.audio.volume ?? 0.35;
+            const dest = audioContext.createMediaStreamDestination();
+            audioSource.connect(gain).connect(dest);
+            const audioTrack = dest.stream.getAudioTracks()[0];
+            if (audioTrack) {
+              stream.addTrack(audioTrack);
+            }
+            audioSource.start(0);
+          } catch (audioErr) {
+            console.warn('Could not attach audio track to MediaRecorder stream:', audioErr);
+          }
+        }
+
         const mimeTypes = [
           'video/mp4;codecs=avc1',
           'video/mp4',
@@ -619,6 +645,13 @@ export const ExportModal: React.FC<ExportModalProps> = ({
 
         const recordingFinished = new Promise<void>((resolve) => {
           recorder.onstop = () => {
+            if (audioSource) {
+              try { audioSource.stop(); } catch (_) {}
+            }
+            if (audioContext) {
+              try { audioContext.close(); } catch (_) {}
+            }
+
             const blob = new Blob(chunks, { type: selectedMime });
             const url = URL.createObjectURL(blob);
             setDownloadUrl(url);
@@ -853,6 +886,17 @@ export const ExportModal: React.FC<ExportModalProps> = ({
             <div className="flex justify-between text-slate-400">
               <span>موتور رندرینگ:</span>
               <span className="text-emerald-400 font-medium">Native FFmpeg H.264 (بدون افت فریم)</span>
+            </div>
+            <div className="flex justify-between text-slate-400">
+              <span>موزیک زیرصدا:</span>
+              {project.audio?.url ? (
+                <span className="text-pink-300 font-bold flex items-center gap-1">
+                  <Music size={12} />
+                  <span>{project.audio.name || 'موزیک فعال'} ({Math.round((project.audio.volume ?? 0.35) * 100)}٪)</span>
+                </span>
+              ) : (
+                <span className="text-slate-500 font-medium">بدون موزیک زیرصدا</span>
+              )}
             </div>
 
             {/* Prominent Estimated File Size & Render Time Indicators */}

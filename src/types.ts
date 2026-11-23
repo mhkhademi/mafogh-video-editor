@@ -111,6 +111,9 @@ export interface AudioConfig {
   name?: string;
   volume: number; // 0 to 1
   loop?: boolean;
+  fadeIn?: boolean;
+  fadeOut?: boolean;
+  duration?: number;
 }
 
 export type AspectRatioType = '16:9' | '9:16' | '1:1' | '4:5';
