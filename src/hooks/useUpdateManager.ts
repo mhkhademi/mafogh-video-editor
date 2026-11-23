@@ -121,17 +121,17 @@ export function useUpdateManager() {
       setUpdateInfo(data);
 
       if (data.hasUpdate) {
+        // Automatically open the update modal on startup when an update is available!
+        setIsModalOpen(true);
+
         if (data.isForce) {
-          // Force Update: automatically open modal and start update!
-          setIsModalOpen(true);
+          // Force Update: automatically start update!
           if (!forceUpdateTriggeredRef.current) {
             forceUpdateTriggeredRef.current = true;
             setTimeout(() => {
               applyUpdate();
             }, 600);
           }
-        } else if (manual) {
-          setIsModalOpen(true);
         }
       } else if (manual) {
         alert('شما در حال حاضر از آخرین نسخه تدوینگر مافوق استفاده می‌کنید.');
@@ -188,16 +188,9 @@ export function useUpdateManager() {
     }
   }, []);
 
-  // On initial mount: check once
+  // On initial mount: check once on startup
   useEffect(() => {
     checkForUpdates();
-
-    // Check periodically every 5 minutes
-    const interval = setInterval(() => {
-      checkForUpdates();
-    }, 5 * 60 * 1000);
-
-    return () => clearInterval(interval);
   }, [checkForUpdates]);
 
   return {
