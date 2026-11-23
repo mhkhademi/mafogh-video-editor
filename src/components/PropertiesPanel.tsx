@@ -246,6 +246,88 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
               </select>
             </div>
 
+            {/* Per-Slide Watermark Override */}
+            {watermark && watermark.enabled && (
+              <div className="border-t border-slate-800 pt-3.5 space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="block text-xs font-semibold text-slate-300">
+                    نشان تجاری در این اسلاید
+                  </label>
+                  <span className="text-[10px] text-pink-400 font-medium">
+                    {slide.watermarkOverride?.colorMode === 'hidden'
+                      ? 'مخفی در این اسلاید'
+                      : slide.watermarkOverride?.colorMode === 'light'
+                      ? 'اجبار به سفید'
+                      : slide.watermarkOverride?.colorMode === 'dark'
+                      ? 'اجبار به تیره'
+                      : 'انطباق خودکار هوشمند ✨'}
+                  </span>
+                </div>
+                <div className="grid grid-cols-4 gap-1">
+                  <button
+                    type="button"
+                    onClick={() => onUpdateSlide({ watermarkOverride: undefined })}
+                    className={`py-1.5 px-1 rounded-lg text-[11px] font-medium border text-center transition-all ${
+                      !slide.watermarkOverride || slide.watermarkOverride.colorMode === 'inherit'
+                        ? 'border-indigo-500 bg-indigo-500/20 text-indigo-300 font-bold shadow-sm'
+                        : 'border-slate-800 bg-slate-800/60 text-slate-400 hover:text-slate-200'
+                    }`}
+                    title="تشخیص خودکار بر اساس تیرگی/روشنی رنگ پس‌زمینه همین اسلاید"
+                  >
+                    خودکار ✨
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      onUpdateSlide({
+                        watermarkOverride: { colorMode: 'light', visible: true },
+                      })
+                    }
+                    className={`py-1.5 px-1 rounded-lg text-[11px] font-medium border text-center transition-all ${
+                      slide.watermarkOverride?.colorMode === 'light'
+                        ? 'border-indigo-500 bg-indigo-500/20 text-indigo-300 font-bold shadow-sm'
+                        : 'border-slate-800 bg-slate-800/60 text-slate-400 hover:text-slate-200'
+                    }`}
+                    title="اجبار به رنگ سفید (عالی برای اسلایدهای دارک)"
+                  >
+                    سفید ⚪
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      onUpdateSlide({
+                        watermarkOverride: { colorMode: 'dark', visible: true },
+                      })
+                    }
+                    className={`py-1.5 px-1 rounded-lg text-[11px] font-medium border text-center transition-all ${
+                      slide.watermarkOverride?.colorMode === 'dark'
+                        ? 'border-indigo-500 bg-indigo-500/20 text-indigo-300 font-bold shadow-sm'
+                        : 'border-slate-800 bg-slate-800/60 text-slate-400 hover:text-slate-200'
+                    }`}
+                    title="اجبار به رنگ تیره (برای اسلایدهای روشن)"
+                  >
+                    تیره ⚫
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      onUpdateSlide({
+                        watermarkOverride: { colorMode: 'hidden', visible: false },
+                      })
+                    }
+                    className={`py-1.5 px-1 rounded-lg text-[11px] font-medium border text-center transition-all ${
+                      slide.watermarkOverride?.colorMode === 'hidden'
+                        ? 'border-pink-500 bg-pink-500/20 text-pink-300 font-bold shadow-sm'
+                        : 'border-slate-800 bg-slate-800/60 text-slate-400 hover:text-slate-200'
+                    }`}
+                    title="حذف لوگو فقط از این اسلاید (مثلاً برای اسلاید پایانی CTA)"
+                  >
+                    مخفی ✕
+                  </button>
+                </div>
+              </div>
+            )}
+
             {/* ================= Watermark & Brand Logo Settings ================= */}
             {watermark && onUpdateWatermark && (
               <div className="border-t border-slate-800 pt-4 space-y-3.5">
@@ -394,6 +476,38 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                           </button>
                         ))}
                       </div>
+                    </div>
+
+                    {/* Smart Auto Contrast Toggle */}
+                    <div className="flex items-center justify-between p-2.5 bg-slate-800/60 border border-slate-700/70 rounded-xl">
+                      <div className="pr-1">
+                        <div className="text-xs font-bold text-slate-200 flex items-center gap-1.5">
+                          <span>انطباق هوشمند کنتراست</span>
+                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-pink-500/20 text-pink-300 font-semibold border border-pink-500/30">
+                            Auto Invert
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">
+                          سفید شدن خودکار لوگو روی اسلایدهای تیره و نمایش رنگ اصلی روی اسلایدهای روشن
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        role="switch"
+                        aria-checked={watermark.autoContrast ?? true}
+                        onClick={() => onUpdateWatermark({ autoContrast: !(watermark.autoContrast ?? true) })}
+                        className={`w-11 h-6 rounded-full transition-colors relative cursor-pointer focus:outline-none shrink-0 ${
+                          (watermark.autoContrast ?? true) ? 'bg-pink-600' : 'bg-slate-700'
+                        }`}
+                        dir="ltr"
+                        title="انطباق خودکار رنگ با پس‌زمینه"
+                      >
+                        <span
+                          className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-md transition-transform duration-200 block ${
+                            (watermark.autoContrast ?? true) ? 'translate-x-5' : 'translate-x-0'
+                          }`}
+                        />
+                      </button>
                     </div>
 
                     {/* Logo Color / Tint */}

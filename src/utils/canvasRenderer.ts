@@ -1,6 +1,7 @@
 import { Project, Slide, SlideElement } from '../types';
 import { calculateMotion } from './motionUtils';
 import { getIconSvgDataUri } from './iconRegistry';
+import { resolveSlideWatermark } from './watermarkResolver';
 
 export function renderSlideToCanvas(
   ctx: CanvasRenderingContext2D,
@@ -424,19 +425,20 @@ function drawTintedImage(
   }
 }
 
-  // 4. Render Watermark
-  if (watermark && watermark.enabled) {
+  // 4. Render Watermark with Smart Auto-Contrast and Per-Slide Override
+  const wm = resolveSlideWatermark(watermark, slide);
+  if (wm.visible) {
     ctx.save();
-    ctx.globalAlpha = watermark.opacity ?? 0.95;
-    const pos = watermark.position || 'bottom-center';
-    const targetH = watermark.size ? watermark.size * 1.15 : 55;
+    ctx.globalAlpha = wm.opacity ?? 0.95;
+    const pos = wm.position || 'bottom-center';
+    const targetH = wm.size ? wm.size * 1.15 : 55;
     let wmX = width / 2;
     let wmY = height - 60;
 
-    if (watermark.type === 'text') {
-      const text = watermark.text || 'مافوق';
+    if (wm.type === 'text') {
+      const text = wm.text || 'مافوق';
       ctx.font = `900 ${Math.round(targetH * 0.9)}px 'Vazirmatn', sans-serif`;
-      ctx.fillStyle = watermark.color || '#6b0b45';
+      ctx.fillStyle = wm.color || '#6b0b45';
       ctx.textBaseline = 'middle';
       ctx.direction = 'rtl';
 
@@ -459,7 +461,7 @@ function drawTintedImage(
       }
       ctx.fillText(text, wmX, wmY);
     } else {
-      const logoUrl = watermark.imageUrl || '/mafogh-logo-brand.svg';
+      const logoUrl = wm.imageUrl || '/mafogh-logo-brand.svg';
       const logoImg =
         imageCache?.get(logoUrl) ||
         imageCache?.get('/mafogh-logo-brand.svg') ||
@@ -472,27 +474,27 @@ function drawTintedImage(
         if (pos === 'bottom-center') {
           wmX = width / 2;
           wmY = height - 60;
-          drawTintedImage(ctx, logoImg, wmX - targetW / 2, wmY - targetH / 2, targetW, targetH, watermark.color);
+          drawTintedImage(ctx, logoImg, wmX - targetW / 2, wmY - targetH / 2, targetW, targetH, wm.color);
         } else if (pos === 'bottom-right') {
           wmX = width - 80;
           wmY = height - 60;
-          drawTintedImage(ctx, logoImg, wmX - targetW, wmY - targetH / 2, targetW, targetH, watermark.color);
+          drawTintedImage(ctx, logoImg, wmX - targetW, wmY - targetH / 2, targetW, targetH, wm.color);
         } else if (pos === 'bottom-left') {
           wmX = 80;
           wmY = height - 60;
-          drawTintedImage(ctx, logoImg, wmX, wmY - targetH / 2, targetW, targetH, watermark.color);
+          drawTintedImage(ctx, logoImg, wmX, wmY - targetH / 2, targetW, targetH, wm.color);
         } else if (pos === 'top-right') {
           wmX = width - 80;
           wmY = 60;
-          drawTintedImage(ctx, logoImg, wmX - targetW, wmY - targetH / 2, targetW, targetH, watermark.color);
+          drawTintedImage(ctx, logoImg, wmX - targetW, wmY - targetH / 2, targetW, targetH, wm.color);
         }
       } else {
         ctx.font = `900 ${Math.round(targetH * 0.9)}px 'Vazirmatn', sans-serif`;
-        ctx.fillStyle = watermark.color || '#6b0b45';
+        ctx.fillStyle = wm.color || '#6b0b45';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.direction = 'rtl';
-        ctx.fillText(watermark.text || 'مافوق', wmX, wmY);
+        ctx.fillText(wm.text || 'مافوق', wmX, wmY);
       }
     }
     ctx.restore();

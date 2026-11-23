@@ -1,6 +1,7 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { Slide, WatermarkConfig } from '../types';
 import { SlideElement } from './SlideElement';
+import { resolveSlideWatermark } from '../utils/watermarkResolver';
 
 interface SlideThumbnailProps {
   slide: Slide;
@@ -85,60 +86,65 @@ export const SlideThumbnail: React.FC<SlideThumbnailProps> = ({
           />
         ))}
 
-        {/* Branding Watermark */}
-        {watermark.enabled && (
-          <div
-            className={`absolute flex items-center select-none pointer-events-none transition-all ${
-              watermark.position === 'bottom-center'
-                ? 'bottom-10 left-1/2 -translate-x-1/2'
-                : watermark.position === 'bottom-right'
-                ? 'bottom-10 right-12'
-                : watermark.position === 'bottom-left'
-                ? 'bottom-10 left-12'
-                : 'top-10 right-12'
-            }`}
-            style={{ opacity: watermark.opacity }}
-          >
-            {watermark.type === 'text' ? (
-              <span
-                style={{
-                  fontSize: `${(watermark.size || 48) * 0.9}px`,
-                  color: watermark.color || '#6b0b45',
-                  fontWeight: 900,
-                  fontFamily: 'Vazirmatn, sans-serif',
-                }}
-              >
-                {watermark.text || 'مافوق'}
-              </span>
-            ) : watermark.color ? (
-              <div
-                style={{
-                  height: `${(watermark.size || 48) * 1.15}px`,
-                  width: `${(watermark.size || 48) * 1.15 * 3.3}px`,
-                  backgroundColor: watermark.color,
-                  WebkitMaskImage: `url("${watermark.imageUrl || '/mafogh-logo-brand.svg'}")`,
-                  maskImage: `url("${watermark.imageUrl || '/mafogh-logo-brand.svg'}")`,
-                  WebkitMaskSize: 'contain',
-                  maskSize: 'contain',
-                  WebkitMaskRepeat: 'no-repeat',
-                  maskRepeat: 'no-repeat',
-                  WebkitMaskPosition: 'center',
-                  maskPosition: 'center',
-                }}
-              />
-            ) : (
-              <img
-                src={watermark.imageUrl || '/mafogh-logo-brand.svg'}
-                alt={watermark.text || 'مافوق'}
-                className="object-contain"
-                style={{
-                  height: `${(watermark.size || 48) * 1.15}px`,
-                  width: 'auto',
-                }}
-              />
-            )}
-          </div>
-        )}
+        {/* Branding Watermark with Smart Auto-Contrast */}
+        {(() => {
+          const wm = resolveSlideWatermark(watermark, slide);
+          if (!wm.visible) return null;
+
+          return (
+            <div
+              className={`absolute flex items-center select-none pointer-events-none transition-all duration-300 ${
+                wm.position === 'bottom-center'
+                  ? 'bottom-10 left-1/2 -translate-x-1/2'
+                  : wm.position === 'bottom-right'
+                  ? 'bottom-10 right-12'
+                  : wm.position === 'bottom-left'
+                  ? 'bottom-10 left-12'
+                  : 'top-10 right-12'
+              }`}
+              style={{ opacity: wm.opacity }}
+            >
+              {wm.type === 'text' ? (
+                <span
+                  style={{
+                    fontSize: `${wm.size * 0.9}px`,
+                    color: wm.color,
+                    fontWeight: 900,
+                    fontFamily: 'Vazirmatn, sans-serif',
+                  }}
+                >
+                  {wm.text}
+                </span>
+              ) : wm.color ? (
+                <div
+                  style={{
+                    height: `${wm.size * 1.15}px`,
+                    width: `${wm.size * 1.15 * 3.3}px`,
+                    backgroundColor: wm.color,
+                    WebkitMaskImage: `url("${wm.imageUrl}")`,
+                    maskImage: `url("${wm.imageUrl}")`,
+                    WebkitMaskSize: 'contain',
+                    maskSize: 'contain',
+                    WebkitMaskRepeat: 'no-repeat',
+                    maskRepeat: 'no-repeat',
+                    WebkitMaskPosition: 'center',
+                    maskPosition: 'center',
+                  }}
+                />
+              ) : (
+                <img
+                  src={wm.imageUrl}
+                  alt={wm.text}
+                  className="object-contain"
+                  style={{
+                    height: `${wm.size * 1.15}px`,
+                    width: 'auto',
+                  }}
+                />
+              )}
+            </div>
+          );
+        })()}
       </div>
     </div>
   );

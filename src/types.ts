@@ -77,6 +77,12 @@ export interface SlideBackground {
 
 export type TransitionType = 'fade' | 'slide-left' | 'slide-up' | 'none';
 
+export interface SlideWatermarkOverride {
+  visible?: boolean;
+  colorMode?: 'inherit' | 'light' | 'dark' | 'hidden';
+  customColor?: string;
+}
+
 export interface Slide {
   id: string;
   title: string;
@@ -85,6 +91,7 @@ export interface Slide {
   transitionOut: TransitionType;
   transitionDuration: number;
   elements: SlideElement[];
+  watermarkOverride?: SlideWatermarkOverride;
 }
 
 export interface WatermarkConfig {
@@ -96,6 +103,7 @@ export interface WatermarkConfig {
   opacity: number;
   size?: number;
   color?: string;
+  autoContrast?: boolean;
 }
 
 export interface AudioConfig {
