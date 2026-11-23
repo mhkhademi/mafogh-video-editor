@@ -254,15 +254,23 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                     <Sparkles size={16} className="text-pink-400" />
                     <span className="text-xs font-bold text-slate-200">نشان و لوگوی ویدیو (Watermark)</span>
                   </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={watermark.enabled}
-                      onChange={(e) => onUpdateWatermark({ enabled: e.target.checked })}
-                      className="sr-only peer"
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={watermark.enabled}
+                    onClick={() => onUpdateWatermark({ enabled: !watermark.enabled })}
+                    className={`w-11 h-6 rounded-full transition-colors relative cursor-pointer focus:outline-none shrink-0 ${
+                      watermark.enabled ? 'bg-pink-600' : 'bg-slate-700'
+                    }`}
+                    dir="ltr"
+                    title={watermark.enabled ? 'فعال (کلیک برای غیرفعال‌سازی)' : 'غیرفعال (کلیک برای فعال‌سازی)'}
+                  >
+                    <span
+                      className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-md transition-transform duration-200 ease-in-out block ${
+                        watermark.enabled ? 'translate-x-5' : 'translate-x-0'
+                      }`}
                     />
-                    <div className="w-9 h-5 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-pink-600"></div>
-                  </label>
+                  </button>
                 </div>
 
                 {watermark.enabled && (
