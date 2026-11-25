@@ -13,6 +13,8 @@ import {
   ExternalLink,
   Smartphone,
   Monitor,
+  Square,
+  RectangleVertical,
   Flame,
 } from 'lucide-react';
 import { generateClientArticleProject } from '../utils/clientArticleGenerator';
@@ -449,27 +451,53 @@ export const ArticleToVideoModal: React.FC<ArticleToVideoModalProps> = ({
                     <button
                       type="button"
                       onClick={() => setAspectRatio('16:9')}
-                      className={`flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg text-xs font-bold border transition-all cursor-pointer ${
+                      className={`flex items-center justify-center gap-1 py-1.5 px-2 rounded-lg text-[11px] font-bold border transition-all cursor-pointer ${
                         aspectRatio === '16:9'
                           ? 'bg-[#6B0B45] border-pink-400 text-white shadow-md'
                           : 'bg-slate-800 border-slate-700 text-slate-400 hover:text-white'
                       }`}
                     >
-                      <Monitor size={13} />
-                      <span>۱۶:۹ (سایت و وبلاگ)</span>
+                      <Monitor size={12} />
+                      <span>۱۶:۹ (سایت)</span>
                     </button>
 
                     <button
                       type="button"
                       onClick={() => setAspectRatio('9:16')}
-                      className={`flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg text-xs font-bold border transition-all cursor-pointer ${
+                      className={`flex items-center justify-center gap-1 py-1.5 px-2 rounded-lg text-[11px] font-bold border transition-all cursor-pointer ${
                         aspectRatio === '9:16'
                           ? 'bg-[#6B0B45] border-pink-400 text-white shadow-md'
                           : 'bg-slate-800 border-slate-700 text-slate-400 hover:text-white'
                       }`}
                     >
-                      <Smartphone size={13} />
-                      <span>۹:۱۶ (ریلز و استوری)</span>
+                      <Smartphone size={12} />
+                      <span>۹:۱۶ (ریلز)</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setAspectRatio('1:1')}
+                      className={`flex items-center justify-center gap-1 py-1.5 px-2 rounded-lg text-[11px] font-bold border transition-all cursor-pointer ${
+                        aspectRatio === '1:1'
+                          ? 'bg-[#6B0B45] border-pink-400 text-white shadow-md'
+                          : 'bg-slate-800 border-slate-700 text-slate-400 hover:text-white'
+                      }`}
+                    >
+                      <Square size={12} />
+                      <span>۱:۱ (اینستا)</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setAspectRatio('4:5')}
+                      className={`flex items-center justify-center gap-1 py-1.5 px-2 rounded-lg text-[11px] font-bold border transition-all cursor-pointer ${
+                        aspectRatio === '4:5'
+                          ? 'bg-[#6B0B45] border-pink-400 text-white shadow-md'
+                          : 'bg-slate-800 border-slate-700 text-slate-400 hover:text-white'
+                      }`}
+                    >
+                      <RectangleVertical size={12} />
+                      <span>۴:۵ (عمودی)</span>
                     </button>
                   </div>
                 </div>

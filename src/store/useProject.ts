@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Project, Slide, SlideElement, ElementType, AnimationConfig, AspectRatioType } from '../types';
 import { ltvTemplate } from '../templates/ltvTemplate';
+import { getAspectDimensions } from '../utils/dimensions';
 
 export function useProjectStore() {
   const [project, setProject] = useState<Project>(() => {
@@ -552,21 +553,7 @@ export function useProjectStore() {
   const setAspectRatio = useCallback((ratio: AspectRatioType) => {
     saveSnapshot();
     setProject((prev) => {
-      let width = 1920;
-      let height = 1080;
-      if (ratio === '9:16') {
-        width = 1080;
-        height = 1920;
-      } else if (ratio === '1:1') {
-        width = 1080;
-        height = 1080;
-      } else if (ratio === '4:5') {
-        width = 1080;
-        height = 1350;
-      } else {
-        width = 1920;
-        height = 1080;
-      }
+      const { width, height } = getAspectDimensions(ratio);
       return {
         ...prev,
         aspectRatio: ratio,

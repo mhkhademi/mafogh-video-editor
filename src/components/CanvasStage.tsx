@@ -121,7 +121,7 @@ export const CanvasStage: React.FC<CanvasStageProps> = ({
       const deltaScreenX = moveEvent.clientX - startMouseX;
       const deltaScreenY = moveEvent.clientY - startMouseY;
 
-      // Scale to 1920x1080 canvas coordinates
+      // Scale to active canvas coordinates
       const deltaCanvasX = deltaScreenX / scale;
       const deltaCanvasY = deltaScreenY / scale;
 
@@ -129,7 +129,7 @@ export const CanvasStage: React.FC<CanvasStageProps> = ({
       if (handle === 'e' || handle === 'w') {
         const deltaX = handle === 'e' ? deltaCanvasX : -deltaCanvasX;
         // Elements are centered at (x, y), so expanding one side expands width symmetrically by 2x
-        const widthDeltaPercent = ((deltaX * 2) / 1920) * 100;
+        const widthDeltaPercent = ((deltaX * 2) / width) * 100;
         const newWidth = Math.round(Math.max(15, Math.min(98, startWidth + widthDeltaPercent)));
         onUpdateElement(el.id, { width: newWidth });
         return;
@@ -404,7 +404,7 @@ export const CanvasStage: React.FC<CanvasStageProps> = ({
         <span>مقیاس پیش‌نمایش:</span>
         <span className="font-mono text-indigo-400">{Math.round(scale * 100)}%</span>
         <span className="text-slate-500">|</span>
-        <span>1080p (1920x1080)</span>
+        <span className="font-mono">{width}x{height}</span>
       </div>
     </div>
   );

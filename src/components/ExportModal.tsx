@@ -1,9 +1,10 @@
-import React, { useState, useRef } from 'react';
-import { X, Video, Download, CheckCircle, Loader2, HardDrive, AlertCircle, Clock, Zap, Cpu, Music } from 'lucide-react';
+import React, { useState } from 'react';
+import { X, Video, Download, CheckCircle, Loader2, HardDrive, AlertCircle, Clock, Zap, Music } from 'lucide-react';
 import { Muxer, ArrayBufferTarget } from 'mp4-muxer';
 import { Project } from '../types';
 import { renderSlideToCanvas } from '../utils/canvasRenderer';
 import { getIconSvgDataUri } from '../utils/iconRegistry';
+import { getProjectLogicalDimensions } from '../utils/dimensions';
 
 interface ExportModalProps {
   project: Project;
@@ -72,6 +73,131 @@ async function preloadProjectAssets(project: Project): Promise<Map<string, HTMLI
   return imageMap;
 }
 
+/**
+ * Probes WebCodecs AudioEncoder for the best MP4-compatible audio codec (AAC-LC preferred, Opus fallback).
+ */
+async function findSupportedAudioEncoderConfig(): Promise<{
+  muxerCodec: 'aac' | 'opus';
+  encoderConfig: AudioEncoderConfig;
+} | null> {
+  if (typeof AudioEncoder === 'undefined' || typeof AudioData === 'undefined') {
+    return null;
+  }
+
+  const candidates: Array<{ muxerCodec: 'aac' | 'opus'; config: AudioEncoderConfig }> = [
+    {
+      muxerCodec: 'aac',
+      config: { codec: 'mp4a.40.2', numberOfChannels: 2, sampleRate: 48000, bitrate: 128_000 },
+    },
+    {
+      muxerCodec: 'aac',
+      config: { codec: 'mp4a.40.2', numberOfChannels: 2, sampleRate: 44100, bitrate: 128_000 },
+    },
+    {
+      muxerCodec: 'opus',
+      config: { codec: 'opus', numberOfChannels: 2, sampleRate: 48000, bitrate: 128_000 },
+    },
+  ];
+
+  for (const cand of candidates) {
+    try {
+      const support = await AudioEncoder.isConfigSupported(cand.config);
+      if (support.supported) {
+        return { muxerCodec: cand.muxerCodec, encoderConfig: cand.config };
+      }
+    } catch (_) {}
+  }
+  return null;
+}
+
+/**
+ * Probes WebCodecs VideoEncoder across hardware and software profiles so non-16:9
+ * dimensions (1:1, 4:5, 9:16) reliably initialize on every GPU driver.
+ */
+async function findSupportedVideoEncoderConfig(
+  width: number,
+  height: number,
+  bitrate: number,
+  framerate: number
+): Promise<VideoEncoderConfig> {
+  const candidates: VideoEncoderConfig[] = [
+    { codec: 'avc1.64002a', width, height, bitrate, framerate, hardwareAcceleration: 'prefer-hardware', latencyMode: 'quality' },
+    { codec: 'avc1.4d402a', width, height, bitrate, framerate, hardwareAcceleration: 'prefer-hardware', latencyMode: 'quality' },
+    { codec: 'avc1.640028', width, height, bitrate, framerate, hardwareAcceleration: 'no-preference', latencyMode: 'quality' },
+    { codec: 'avc1.4d4028', width, height, bitrate, framerate, hardwareAcceleration: 'no-preference', latencyMode: 'quality' },
+    { codec: 'avc1.64002a', width, height, bitrate, framerate, hardwareAcceleration: 'prefer-software', latencyMode: 'quality' },
+    { codec: 'avc1.4d402a', width, height, bitrate, framerate, hardwareAcceleration: 'prefer-software', latencyMode: 'quality' },
+  ];
+
+  for (const cfg of candidates) {
+    try {
+      const support = await VideoEncoder.isConfigSupported(cfg);
+      if (support.supported) {
+        return cfg;
+      }
+    } catch (_) {}
+  }
+
+  return candidates[0];
+}
+
+/**
+ * Decodes and renders the project's background music track offline into a stereo AudioBuffer
+ * matching the exact video duration, volume, looping, and fade-in/fade-out envelopes.
+ */
+async function renderProjectAudioTrack(
+  audioConfig: Project['audio'],
+  totalDuration: number,
+  sampleRate: number
+): Promise<AudioBuffer | null> {
+  if (!audioConfig?.url || totalDuration <= 0) return null;
+
+  const res = await fetch(audioConfig.url);
+  if (!res.ok) {
+    throw new Error(`خطا در دریافت فایل موزیک زیرصدا (${res.status})`);
+  }
+  const arrayBuf = await res.arrayBuffer();
+
+  const tempCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+  let decoded: AudioBuffer;
+  try {
+    decoded = await tempCtx.decodeAudioData(arrayBuf.slice(0));
+  } finally {
+    await tempCtx.close().catch(() => {});
+  }
+
+  const totalSamples = Math.max(1, Math.ceil(totalDuration * sampleRate));
+  const offlineCtx = new OfflineAudioContext(2, totalSamples, sampleRate);
+  const src = offlineCtx.createBufferSource();
+  src.buffer = decoded;
+  src.loop = audioConfig.loop ?? true;
+
+  const gainNode = offlineCtx.createGain();
+  const targetVol = Math.max(0, Math.min(1, audioConfig.volume ?? 0.35));
+  const fadeInDur = audioConfig.fadeIn ? Math.min(1.5, totalDuration * 0.25) : 0;
+  const fadeOutDur = audioConfig.fadeOut ? Math.min(1.8, totalDuration * 0.25) : 0;
+
+  if (fadeInDur > 0.05) {
+    gainNode.gain.setValueAtTime(0.0001, 0);
+    gainNode.gain.linearRampToValueAtTime(targetVol, fadeInDur);
+  } else {
+    gainNode.gain.setValueAtTime(targetVol, 0);
+  }
+
+  if (fadeOutDur > 0.05 && totalDuration > fadeInDur + fadeOutDur) {
+    const fadeOutStart = totalDuration - fadeOutDur;
+    gainNode.gain.setValueAtTime(targetVol, fadeOutStart);
+    gainNode.gain.linearRampToValueAtTime(0.0001, totalDuration);
+  }
+
+  src.connect(gainNode);
+  gainNode.connect(offlineCtx.destination);
+  src.start(0);
+  src.stop(totalDuration);
+
+  return await offlineCtx.startRendering();
+}
+
 export const ExportModal: React.FC<ExportModalProps> = ({
   project,
   totalDuration: propTotalDuration,
@@ -102,26 +228,13 @@ export const ExportModal: React.FC<ExportModalProps> = ({
     0
   );
 
+  const logicalDims = getProjectLogicalDimensions(project);
+
   const getDims = (res: '1080p' | '720p') => {
-    let baseW = project.width || 1920;
-    let baseH = project.height || 1080;
-    if (project.aspectRatio === '9:16') {
-      baseW = 1080;
-      baseH = 1920;
-    } else if (project.aspectRatio === '1:1') {
-      baseW = 1080;
-      baseH = 1080;
-    } else if (project.aspectRatio === '4:5') {
-      baseW = 1080;
-      baseH = 1350;
-    } else if (project.aspectRatio === '16:9') {
-      baseW = 1920;
-      baseH = 1080;
-    }
-    const scaleFactor = res === '1080p' ? 1 : 720 / Math.min(baseW, baseH);
+    const scaleFactor = res === '1080p' ? 1 : 720 / Math.min(logicalDims.width, logicalDims.height);
     return {
-      width: Math.round(baseW * scaleFactor),
-      height: Math.round(baseH * scaleFactor),
+      width: Math.round(logicalDims.width * scaleFactor),
+      height: Math.round(logicalDims.height * scaleFactor),
     };
   };
 
@@ -210,13 +323,15 @@ export const ExportModal: React.FC<ExportModalProps> = ({
       imageCache = new Map();
     }
 
-    // 2. Check if native FFmpeg backend server is active
+    // 2. Check if native Node/FFmpeg backend server (not the embedded Launcher web server) is active
     let backendAvailable = false;
     try {
       const healthRes = await fetch('http://localhost:3001/api/health');
       if (healthRes.ok) {
         const data = await healthRes.json();
-        if (data.status === 'ok') backendAvailable = true;
+        if (data.status === 'ok' && data.mode !== 'embedded' && data.ffmpeg?.found !== false) {
+          backendAvailable = true;
+        }
       }
     } catch (_) {
       backendAvailable = false;
@@ -261,10 +376,33 @@ export const ExportModal: React.FC<ExportModalProps> = ({
 
     if (engineMode === 'turbo-gpu' && isWebCodecsSupported) {
       // ========================================================
-      // PATH 0: TURBO HARDWARE GPU (WebCodecs + mp4-muxer) ~60+ FPS!
+      // PATH 0: TURBO HARDWARE GPU (WebCodecs + mp4-muxer + AAC Audio)
       // ========================================================
       setRenderStatusText('آماده‌سازی موتور توربو GPU و انکودر سخت‌افزاری...');
       try {
+        // Prepare background audio track if configured and AudioEncoder is supported
+        let audioSpec: Awaited<ReturnType<typeof findSupportedAudioEncoderConfig>> = null;
+        let renderedAudio: AudioBuffer | null = null;
+
+        if (project.audio?.url) {
+          setRenderStatusText('در حال پردازش و میکس موزیک زیرصدا...');
+          audioSpec = await findSupportedAudioEncoderConfig();
+          if (audioSpec) {
+            try {
+              renderedAudio = await renderProjectAudioTrack(
+                project.audio,
+                actualTotalDuration,
+                audioSpec.encoderConfig.sampleRate
+              );
+            } catch (audioPrepErr) {
+              console.warn('Audio track preparation failed, continuing video export:', audioPrepErr);
+              renderedAudio = null;
+            }
+          }
+        }
+
+        const hasAudioTrack = Boolean(audioSpec && renderedAudio);
+
         const muxer = new Muxer({
           target: new ArrayBufferTarget(),
           video: {
@@ -273,7 +411,16 @@ export const ExportModal: React.FC<ExportModalProps> = ({
             height: targetHeight,
             frameRate: fps,
           },
-          fastStart: false,
+          ...(hasAudioTrack && audioSpec
+            ? {
+                audio: {
+                  codec: audioSpec.muxerCodec,
+                  numberOfChannels: 2,
+                  sampleRate: audioSpec.encoderConfig.sampleRate,
+                },
+              }
+            : {}),
+          fastStart: 'in-memory',
           firstTimestampBehavior: 'offset',
         });
 
@@ -313,34 +460,65 @@ export const ExportModal: React.FC<ExportModalProps> = ({
           },
         });
 
-        // Determine supported H.264 profile
-        let chosenCodec = 'avc1.64002a'; // High Profile 4.2
-        try {
-          const support = await VideoEncoder.isConfigSupported({
-            codec: chosenCodec,
-            width: targetWidth,
-            height: targetHeight,
-            bitrate: targetBitrate,
-            framerate: fps,
-            hardwareAcceleration: 'prefer-hardware',
-          });
-          if (!support.supported) {
-            chosenCodec = 'avc1.4d402a'; // Main Profile fallback
-          }
-        } catch (_) {
-          chosenCodec = 'avc1.64002a';
-        }
+        const videoConfig = await findSupportedVideoEncoderConfig(
+          targetWidth,
+          targetHeight,
+          targetBitrate,
+          fps
+        );
+        videoEncoder.configure(videoConfig);
 
-        // Configure hardware acceleration
-        videoEncoder.configure({
-          codec: chosenCodec,
-          width: targetWidth,
-          height: targetHeight,
-          bitrate: targetBitrate,
-          framerate: fps,
-          hardwareAcceleration: 'prefer-hardware',
-          latencyMode: 'quality',
-        });
+        // Encode audio track chunks if available
+        if (hasAudioTrack && audioSpec && renderedAudio) {
+          const audioEncoder = new AudioEncoder({
+            output: (chunk, meta) => {
+              try {
+                muxer.addAudioChunk(chunk, meta);
+              } catch (audioErr: any) {
+                console.error('Error adding audio chunk to mp4-muxer:', audioErr);
+                encoderFatalError = audioErr?.message || 'خطا در بسته‌بندی صدای ویدیو';
+              }
+            },
+            error: (e: any) => {
+              console.error('AudioEncoder error:', e);
+              encoderFatalError = e?.message || 'خطای انکود صدای زیرصدا';
+            },
+          });
+
+          audioEncoder.configure(audioSpec.encoderConfig);
+
+          const ch0 = renderedAudio.getChannelData(0);
+          const ch1 = renderedAudio.getChannelData(1);
+          const totalSamples = renderedAudio.length;
+          const sr = audioSpec.encoderConfig.sampleRate;
+          const chunkSize = 4096;
+
+          for (let offset = 0; offset < totalSamples; offset += chunkSize) {
+            if (encoderFatalError) throw new Error(encoderFatalError);
+            const frameCount = Math.min(chunkSize, totalSamples - offset);
+            const planar = new Float32Array(frameCount * 2);
+            planar.set(ch0.subarray(offset, offset + frameCount), 0);
+            planar.set(ch1.subarray(offset, offset + frameCount), frameCount);
+
+            const audioData = new AudioData({
+              format: 'f32-planar',
+              sampleRate: sr,
+              numberOfFrames: frameCount,
+              numberOfChannels: 2,
+              timestamp: Math.round((offset / sr) * 1_000_000),
+              data: planar,
+            });
+            audioEncoder.encode(audioData);
+            audioData.close();
+
+            while (audioEncoder.encodeQueueSize > 16) {
+              await new Promise((r) => setTimeout(r, 2));
+            }
+          }
+
+          await audioEncoder.flush();
+          audioEncoder.close();
+        }
 
         let loopStartTime = performance.now();
         let lastEtaUpdateTime = loopStartTime;
@@ -355,7 +533,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
           const currentGlobalTime = f / fps;
           const { slide, slideLocalTime } = getSlideAtTime(currentGlobalTime);
 
-          // Render canvas frame
+          // Render canvas frame using exact logical design dimensions
           renderSlideToCanvas(
             ctx,
             slide,
@@ -363,7 +541,9 @@ export const ExportModal: React.FC<ExportModalProps> = ({
             project.watermark,
             imageCache,
             targetWidth,
-            targetHeight
+            targetHeight,
+            logicalDims.width,
+            logicalDims.height
           );
 
           // Direct zero-copy GPU VideoFrame from canvas with explicit duration
@@ -460,8 +640,10 @@ export const ExportModal: React.FC<ExportModalProps> = ({
             resolution,
             bitrate: targetBitrate,
             totalFrames,
+            totalDuration: actualTotalDuration,
             width: targetWidth,
             height: targetHeight,
+            audio: project.audio,
           }),
         });
 
@@ -488,7 +670,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
           const currentGlobalTime = f / fps;
           const { slide, slideLocalTime } = getSlideAtTime(currentGlobalTime);
 
-          // Render exact mathematical frame
+          // Render exact mathematical frame using logical design dimensions
           renderSlideToCanvas(
             ctx,
             slide,
@@ -496,7 +678,9 @@ export const ExportModal: React.FC<ExportModalProps> = ({
             project.watermark,
             imageCache,
             targetWidth,
-            targetHeight
+            targetHeight,
+            logicalDims.width,
+            logicalDims.height
           );
 
           // Convert to JPEG blob at high-efficiency 0.86 quality (crisp H.264 source, 3x faster encode)
@@ -611,7 +795,21 @@ export const ExportModal: React.FC<ExportModalProps> = ({
             audioSource.buffer = decoded;
             audioSource.loop = project.audio.loop ?? true;
             const gain = audioContext.createGain();
-            gain.gain.value = project.audio.volume ?? 0.35;
+            const targetVol = project.audio.volume ?? 0.35;
+            const nowAudio = audioContext.currentTime;
+            if (project.audio.fadeIn) {
+              const fadeInDur = Math.min(1.5, actualTotalDuration * 0.25);
+              gain.gain.setValueAtTime(0.0001, nowAudio);
+              gain.gain.linearRampToValueAtTime(targetVol, nowAudio + fadeInDur);
+            } else {
+              gain.gain.setValueAtTime(targetVol, nowAudio);
+            }
+            if (project.audio.fadeOut && actualTotalDuration > 0.5) {
+              const fadeOutDur = Math.min(1.8, actualTotalDuration * 0.25);
+              const fadeOutStart = Math.max(0, actualTotalDuration - fadeOutDur);
+              gain.gain.setValueAtTime(targetVol, nowAudio + fadeOutStart);
+              gain.gain.linearRampToValueAtTime(0.0001, nowAudio + actualTotalDuration);
+            }
             const dest = audioContext.createMediaStreamDestination();
             audioSource.connect(gain).connect(dest);
             const audioTrack = dest.stream.getAudioTracks()[0];
@@ -692,7 +890,9 @@ export const ExportModal: React.FC<ExportModalProps> = ({
               project.watermark,
               imageCache,
               targetWidth,
-              targetHeight
+              targetHeight,
+              logicalDims.width,
+              logicalDims.height
             );
 
             const pct = Math.min(100, Math.round((elapsedMs / durationMs) * 100));
@@ -884,8 +1084,16 @@ export const ExportModal: React.FC<ExportModalProps> = ({
               <span className="text-amber-400 font-mono font-bold">{actualTotalDuration} ثانیه</span>
             </div>
             <div className="flex justify-between text-slate-400">
+              <span>ابعاد خروجی انتخابی:</span>
+              <span className="text-indigo-300 font-mono font-bold">
+                {project.aspectRatio || '16:9'} ({resolution === '1080p' ? `${dim1080.width}x${dim1080.height}` : `${dim720.width}x${dim720.height}`})
+              </span>
+            </div>
+            <div className="flex justify-between text-slate-400">
               <span>موتور رندرینگ:</span>
-              <span className="text-emerald-400 font-medium">Native FFmpeg H.264 (بدون افت فریم)</span>
+              <span className="text-emerald-400 font-medium">
+                {engineMode === 'turbo-gpu' ? 'Turbo GPU H.264 + AAC Audio' : 'Native FFmpeg H.264 + AAC Audio'}
+              </span>
             </div>
             <div className="flex justify-between text-slate-400">
               <span>موزیک زیرصدا:</span>

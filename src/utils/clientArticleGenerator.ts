@@ -1,4 +1,5 @@
 import { Project, Slide, AspectRatioType } from '../types';
+import { getAspectDimensions } from './dimensions';
 
 export function generateClientArticleProject(params: {
   title: string;
@@ -9,9 +10,8 @@ export function generateClientArticleProject(params: {
   targetDuration?: number;
 }): Project {
   const aspectRatio = params.aspectRatio || '16:9';
-  const isVertical = aspectRatio === '9:16';
-  const width = isVertical ? 1080 : 1920;
-  const height = isVertical ? 1920 : 1080;
+  const isVertical = aspectRatio !== '16:9';
+  const { width, height } = getAspectDimensions(aspectRatio);
 
   const title = params.title.trim() || 'نکات طلایی برای رشد کسب‌وکار';
   const cleanTitle = title.length > 55 ? `${title.slice(0, 52)}...` : title;

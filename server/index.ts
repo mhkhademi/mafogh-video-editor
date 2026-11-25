@@ -49,6 +49,7 @@ interface ExportSession {
   id: string;
   ffmpeg: ChildProcessWithoutNullStreams;
   outputFile: string;
+  tempAudioFile?: string;
   filename: string;
   fps: number;
   framesReceived: number;
@@ -86,7 +87,17 @@ app.post('/api/upload', upload.single('file'), (req, res) => {
 
 // 1. Start a new FFmpeg video export session
 app.post('/api/export/start', (req, res) => {
-  const { title, fps = 30, resolution = '1080p', bitrate = 8_000_000, totalFrames = 0, width, height } = req.body;
+  const {
+    title,
+    fps = 30,
+    resolution = '1080p',
+    bitrate = 8_000_000,
+    totalFrames = 0,
+    totalDuration = 0,
+    width,
+    height,
+    audio,
+  } = req.body;
   const ffmpegPath = getFFmpegPath();
 
   if (!fs.existsSync(ffmpegPath) && ffmpegPath !== 'ffmpeg') {
@@ -98,9 +109,70 @@ app.post('/api/export/start', (req, res) => {
   const filename = `${cleanTitle}_${Date.now()}.mp4`;
   const outputFile = path.join(EXPORTS_DIR, filename);
 
-  const targetWidth = width ? Math.round(width) : (resolution === '1080p' ? 1920 : 1280);
-  const targetHeight = height ? Math.round(height) : (resolution === '1080p' ? 1080 : 720);
+  const targetWidth = width ? Math.round(width) : resolution === '1080p' ? 1920 : 1280;
+  const targetHeight = height ? Math.round(height) : resolution === '1080p' ? 1080 : 720;
   const targetBitrate = Math.round(bitrate);
+  const videoDuration = totalDuration > 0 ? Number(totalDuration) : totalFrames / Math.max(1, fps);
+
+  // Resolve optional background audio file (public asset path or base64 data URL)
+  let audioFilePath: string | undefined;
+  let tempAudioFile: string | undefined;
+  if (audio?.url && typeof audio.url === 'string') {
+    if (audio.url.startsWith('data:')) {
+      const match = audio.url.match(/^data:audio\/([a-zA-Z0-9.+-]+);base64,(.+)$/);
+      if (match) {
+        const rawExt = match[1].toLowerCase();
+        const ext = rawExt.includes('mpeg') || rawExt.includes('mp3') ? 'mp3' : rawExt.includes('wav') ? 'wav' : 'audio';
+        tempAudioFile = path.join(EXPORTS_DIR, `${sessionId}_tmp.${ext}`);
+        fs.writeFileSync(tempAudioFile, Buffer.from(match[2], 'base64'));
+        audioFilePath = tempAudioFile;
+      }
+    } else if (audio.url.startsWith('/')) {
+      const rel = audio.url.replace(/^\/+/, '');
+      const candidates = [
+        path.join(__dirname, '../public', rel),
+        path.join(__dirname, '../dist', rel),
+        path.join(__dirname, '..', rel),
+      ];
+      audioFilePath = candidates.find((p) => fs.existsSync(p));
+    }
+  }
+
+  const hasAudio = Boolean(audioFilePath && fs.existsSync(audioFilePath));
+  const audioArgs: string[] = [];
+  const audioOutArgs: string[] = [];
+
+  if (hasAudio && audioFilePath) {
+    const loopAudio = audio.loop !== false;
+    if (loopAudio) {
+      audioArgs.push('-stream_loop', '-1');
+    }
+    audioArgs.push('-i', audioFilePath);
+
+    const vol = Math.max(0, Math.min(1, Number(audio.volume ?? 0.35)));
+    const filters: string[] = [`volume=${vol.toFixed(3)}`];
+    if (audio.fadeIn && videoDuration > 0.2) {
+      const fadeInDur = Math.min(1.5, videoDuration * 0.25);
+      filters.push(`afade=t=in:st=0:d=${fadeInDur.toFixed(2)}`);
+    }
+    if (audio.fadeOut && videoDuration > 0.5) {
+      const fadeOutDur = Math.min(1.8, videoDuration * 0.25);
+      const fadeOutStart = Math.max(0, videoDuration - fadeOutDur);
+      filters.push(`afade=t=out:st=${fadeOutStart.toFixed(2)}:d=${fadeOutDur.toFixed(2)}`);
+    }
+    if (!loopAudio) {
+      filters.push('apad');
+    }
+
+    audioOutArgs.push(
+      '-map', '0:v:0',
+      '-map', '1:a:0',
+      '-af', filters.join(','),
+      '-c:a', 'aac',
+      '-b:a', '128k',
+      '-shortest'
+    );
+  }
 
   // High-performance H.264 MP4 encoder with hardware acceleration
   const isWindows = process.platform === 'win32';
@@ -110,15 +182,17 @@ app.post('/api/export/start', (req, res) => {
     '-vcodec', 'mjpeg',
     '-r', String(fps),
     '-i', '-',
+    ...audioArgs,
     ...(isWindows
       ? ['-c:v', 'h264_mf', '-b:v', `${targetBitrate}`]
       : ['-c:v', 'libx264', '-preset', 'ultrafast', '-tune', 'zerolatency', '-pix_fmt', 'yuv420p', '-b:v', `${targetBitrate}`]),
     '-s', `${targetWidth}x${targetHeight}`,
+    ...audioOutArgs,
     '-movflags', '+faststart',
     outputFile,
   ];
 
-  console.log(`[FFmpeg Export] Starting session ${sessionId} -> ${filename}`);
+  console.log(`[FFmpeg Export] Starting session ${sessionId} -> ${filename} (${targetWidth}x${targetHeight}, audio=${hasAudio})`);
   const ffmpegProcess = spawn(ffmpegPath, ffmpegArgs);
   const errorLogs: string[] = [];
 
@@ -137,6 +211,7 @@ app.post('/api/export/start', (req, res) => {
     id: sessionId,
     ffmpeg: ffmpegProcess,
     outputFile,
+    tempAudioFile,
     filename,
     fps,
     framesReceived: 0,
@@ -194,6 +269,12 @@ app.post('/api/export/finalize', async (req, res) => {
   const exitCode = await session.closePromise;
   activeSessions.delete(sessionId);
 
+  if (session.tempAudioFile && fs.existsSync(session.tempAudioFile)) {
+    try {
+      fs.unlinkSync(session.tempAudioFile);
+    } catch (_) {}
+  }
+
   if (exitCode !== 0 && !fs.existsSync(session.outputFile)) {
     console.error(`[FFmpeg Export Error]`, session.errorLogs.slice(-10).join('\n'));
     return res.status(500).json({
@@ -224,6 +305,11 @@ app.post('/api/export/cancel', (req, res) => {
     if (fs.existsSync(session.outputFile)) {
       try {
         fs.unlinkSync(session.outputFile);
+      } catch (_) {}
+    }
+    if (session.tempAudioFile && fs.existsSync(session.tempAudioFile)) {
+      try {
+        fs.unlinkSync(session.tempAudioFile);
       } catch (_) {}
     }
   }

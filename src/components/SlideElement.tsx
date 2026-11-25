@@ -126,21 +126,21 @@ export const SlideElement: React.FC<SlideElementProps> = ({
           >
             {/* English / Subtitle section on left */}
             <div
-              className="flex-1 px-8 py-4 flex items-center justify-start text-slate-700 font-sans text-left border-r border-pink-100"
-              style={{ fontSize: '26px' }}
+              className="flex-1 min-w-0 px-5 py-3.5 flex items-center justify-start text-slate-700 font-sans text-left border-r border-pink-100 overflow-hidden"
+              style={{ fontSize: '22px' }}
             >
-              {element.subcontent}
+              <span className="truncate">{element.subcontent}</span>
             </div>
 
             {/* Persian text on right with brand magenta background */}
             <div
-              className="w-2/5 px-8 py-4 flex items-center justify-center font-bold text-white shadow-inner"
+              className="w-2/5 min-w-0 px-4 py-3.5 flex items-center justify-center text-center font-bold text-white shadow-inner overflow-hidden"
               style={{
                 backgroundColor: element.backgroundColor || '#9d174d',
-                fontSize: '28px',
+                fontSize: '24px',
               }}
             >
-              {textToShow}
+              <span className="truncate">{textToShow}</span>
             </div>
           </div>
         );

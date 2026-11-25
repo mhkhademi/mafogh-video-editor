@@ -80,8 +80,8 @@ export const App: React.FC = () => {
     if (!audio.src.endsWith(audioUrl) && audio.src !== audioUrl) {
       audio.src = audioUrl;
     }
-    audio.volume = Math.max(0, Math.min(1, project.audio.volume ?? 0.35));
-    audio.loop = project.audio.loop ?? true;
+    audio.volume = Math.max(0, Math.min(1, project.audio?.volume ?? 0.35));
+    audio.loop = project.audio?.loop ?? true;
 
     if (isPlaying) {
       if (audio.duration && Number.isFinite(audio.duration) && audio.duration > 0) {
