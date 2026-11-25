@@ -49,9 +49,25 @@ export function useProjectStore() {
     setProject(next);
   }, [future, project]);
 
-  // Auto-save project changes to localStorage
+  // Auto-save project changes to localStorage safely (handle QuotaExceededError for large audio/image data URLs)
   useEffect(() => {
-    localStorage.setItem('mafogh_editor_project', JSON.stringify(project));
+    try {
+      localStorage.setItem('mafogh_editor_project', JSON.stringify(project));
+    } catch (err) {
+      try {
+        // Strip oversized data:audio payloads from localStorage backup while keeping live state intact
+        const slimProject: Project = {
+          ...project,
+          audio:
+            project.audio?.url?.startsWith('data:') && project.audio.url.length > 200_000
+              ? { ...project.audio, url: '' }
+              : project.audio,
+        };
+        localStorage.setItem('mafogh_editor_project', JSON.stringify(slimProject));
+      } catch (innerErr) {
+        console.warn('Could not persist project to localStorage (quota exceeded):', innerErr);
+      }
+    }
   }, [project]);
 
   // Compute total duration of the project
