@@ -260,7 +260,7 @@ export function renderSlideToCanvas(
         let enSize = 24;
         const enMaxW = Math.max(60, leftW - 40);
         while (enSize > 14) {
-          ctx.font = `500 ${enSize}px -apple-system, BlinkMacSystemFont, sans-serif`;
+          ctx.font = `500 ${enSize}px 'YekanBakhFaNum', 'Vazirmatn', -apple-system, BlinkMacSystemFont, sans-serif`;
           if (ctx.measureText(element.subcontent).width <= enMaxW) break;
           enSize -= 1;
         }
