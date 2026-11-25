@@ -1208,6 +1208,50 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                           })
                         }
                       />
+
+                      {/* Font Weight Selector (YekanBakhFaNum) */}
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-400 mb-1.5">
+                          وزن فونت
+                        </label>
+                        <div className="grid grid-cols-5 gap-1">
+                          {[
+                            { weight: '100' as const, label: 'نازک' },
+                            { weight: '300' as const, label: 'سبک' },
+                            { weight: '400' as const, label: 'معمولی' },
+                            { weight: '600' as const, label: 'نیمه‌ضخیم' },
+                            { weight: '800' as const, label: 'ضخیم' },
+                          ].map((w) => {
+                            const currentWeight = String(
+                              selectedElement.fontWeight ||
+                                (selectedElement.type === 'title'
+                                  ? '800'
+                                  : selectedElement.type === 'card'
+                                  ? '600'
+                                  : '400')
+                            );
+                            const isActive = currentWeight === w.weight;
+                            return (
+                              <button
+                                key={w.weight}
+                                type="button"
+                                onClick={() =>
+                                  onUpdateElement(selectedElement.id, { fontWeight: w.weight })
+                                }
+                                style={{ fontWeight: Number(w.weight) }}
+                                className={`py-1.5 px-1 rounded-lg text-[11px] border text-center transition-all cursor-pointer ${
+                                  isActive
+                                    ? 'border-indigo-500 bg-indigo-500/20 text-indigo-200 shadow-sm'
+                                    : 'border-slate-800 bg-slate-800/60 text-slate-400 hover:text-slate-200'
+                                }`}
+                                title={`وزن ${w.weight}`}
+                              >
+                                {w.label}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
                       <div>
                         <label className="block text-xs font-semibold text-slate-400 mb-1">
                           رنگ متن

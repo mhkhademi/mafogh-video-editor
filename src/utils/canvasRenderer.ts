@@ -173,7 +173,7 @@ export function renderSlideToCanvas(
       const defaultWeight = element.type === 'title' ? '800' : element.type === 'paragraph' ? '500' : '400';
       const fontWeight = element.fontWeight || defaultWeight;
       const align = (element.textAlign as CanvasTextAlign) || 'center';
-      ctx.font = `${fontWeight} ${fontSize}px 'Vazirmatn', sans-serif`;
+      ctx.font = `${fontWeight} ${fontSize}px 'YekanBakhFaNum', 'Vazirmatn', sans-serif`;
       ctx.fillStyle = element.color || '#0f172a';
       ctx.textAlign = align;
       ctx.textBaseline = 'middle';
@@ -240,7 +240,7 @@ export function renderSlideToCanvas(
       let faSize = 28;
       const faMaxW = Math.max(40, rightW - 24);
       while (faSize > 15) {
-        ctx.font = `bold ${faSize}px 'Vazirmatn', sans-serif`;
+        ctx.font = `bold ${faSize}px 'YekanBakhFaNum', 'Vazirmatn', sans-serif`;
         if (ctx.measureText(motion.displayText).width <= faMaxW) break;
         faSize -= 1;
       }
@@ -280,7 +280,7 @@ export function renderSlideToCanvas(
       const fontSize = element.fontSize || 28;
       const radius = element.borderRadius ?? 24;
 
-      ctx.font = `${element.fontWeight || '600'} ${fontSize}px 'Vazirmatn', sans-serif`;
+      ctx.font = `${element.fontWeight || '600'} ${fontSize}px 'YekanBakhFaNum', 'Vazirmatn', sans-serif`;
       const iconGap = element.icon ? 76 : 0;
       const textMaxW = Math.max(80, cardW - padX * 2 - iconGap);
       const lines = wrapTextLines(ctx, motion.displayText, textMaxW);
@@ -292,7 +292,7 @@ export function renderSlideToCanvas(
       let subLines: string[] = [];
       let subTextH = 0;
       if (element.subcontent) {
-        ctx.font = `500 ${subFontSize}px 'Vazirmatn', sans-serif`;
+        ctx.font = `500 ${subFontSize}px 'YekanBakhFaNum', 'Vazirmatn', sans-serif`;
         subLines = wrapTextLines(ctx, element.subcontent, textMaxW);
         subTextH = 6 + subLines.length * (subFontSize * 1.5);
       }
@@ -343,7 +343,7 @@ export function renderSlideToCanvas(
 
       // Draw Main Text lines
       ctx.fillStyle = element.color || '#1E293B';
-      ctx.font = `${element.fontWeight || '600'} ${fontSize}px 'Vazirmatn', sans-serif`;
+      ctx.font = `${element.fontWeight || '600'} ${fontSize}px 'YekanBakhFaNum', 'Vazirmatn', sans-serif`;
       ctx.textAlign = 'right';
       ctx.textBaseline = 'middle';
       ctx.direction = 'rtl';
@@ -358,7 +358,7 @@ export function renderSlideToCanvas(
       if (subLines.length > 0) {
         const subLineH = subFontSize * 1.5;
         ctx.fillStyle = '#94A3B8';
-        ctx.font = `500 ${subFontSize}px 'Vazirmatn', sans-serif`;
+        ctx.font = `500 ${subFontSize}px 'YekanBakhFaNum', 'Vazirmatn', sans-serif`;
         let subY = (cardH - contentH) / 2 + mainTextH + 6 + subLineH / 2;
         for (const sl of subLines) {
           ctx.fillText(sl.trim(), textStartX, subY);
@@ -369,7 +369,7 @@ export function renderSlideToCanvas(
       ctx.restore();
     } else if (element.type === 'badge') {
       const fontSize = element.fontSize || 20;
-      ctx.font = `${element.fontWeight || '700'} ${fontSize}px 'Vazirmatn', sans-serif`;
+      ctx.font = `${element.fontWeight || '700'} ${fontSize}px 'YekanBakhFaNum', 'Vazirmatn', sans-serif`;
 
       const shouldShowBadgeNum = Boolean(
         element.badgeNumber &&
@@ -536,7 +536,7 @@ export function renderSlideToCanvas(
 
     if (wm.type === 'text') {
       const text = wm.text || 'مافوق';
-      ctx.font = `900 ${Math.round(targetH * 0.9)}px 'Vazirmatn', sans-serif`;
+      ctx.font = `900 ${Math.round(targetH * 0.9)}px 'YekanBakhFaNum', 'Vazirmatn', sans-serif`;
       ctx.fillStyle = wm.color || '#6b0b45';
       ctx.textBaseline = 'middle';
       ctx.direction = 'rtl';
@@ -588,7 +588,7 @@ export function renderSlideToCanvas(
           drawTintedImage(ctx, logoImg, wmX - targetW, wmY - targetH / 2, targetW, targetH, wm.color);
         }
       } else {
-        ctx.font = `900 ${Math.round(targetH * 0.9)}px 'Vazirmatn', sans-serif`;
+        ctx.font = `900 ${Math.round(targetH * 0.9)}px 'YekanBakhFaNum', 'Vazirmatn', sans-serif`;
         ctx.fillStyle = wm.color || '#6b0b45';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';

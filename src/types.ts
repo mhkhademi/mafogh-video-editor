@@ -49,7 +49,7 @@ export interface SlideElement {
   // Styling
   color?: string;
   fontSize?: number; // scale px in 1080p (or icon size)
-  fontWeight?: '300' | '400' | '500' | '600' | '700' | '800' | '900';
+  fontWeight?: '100' | '300' | '400' | '500' | '600' | '700' | '800' | '900';
   textAlign?: 'right' | 'center' | 'left';
   nowrap?: boolean;
   backgroundColor?: string;

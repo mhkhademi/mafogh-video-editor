@@ -295,7 +295,7 @@ export const CanvasStage: React.FC<CanvasStageProps> = ({
                     fontSize: `${wm.size * 0.9}px`,
                     color: wm.color,
                     fontWeight: 900,
-                    fontFamily: 'Vazirmatn, sans-serif',
+                    fontFamily: 'YekanBakhFaNum, Vazirmatn, sans-serif',
                   }}
                 >
                   {wm.text}
