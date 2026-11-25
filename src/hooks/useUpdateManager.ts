@@ -193,6 +193,14 @@ export function useUpdateManager() {
         throw new Error(json.error || json.details || 'خطا در اعمال به‌روزرسانی');
       }
 
+      // Guard against reload loops on the same version
+      try {
+        const appliedHash = json.newHash || updateInfo?.latest?.hash || '';
+        if (appliedHash) {
+          sessionStorage.setItem('mafogh_just_updated_to', appliedHash);
+        }
+      } catch (_) {}
+
       setUpdateStatus('تغییرات با موفقیت اعمال شد!');
 
       try {
@@ -248,6 +256,12 @@ export function useUpdateManager() {
         setUpdateInfo(data);
 
         if (data.hasUpdate) {
+          const justUpdatedTo = sessionStorage.getItem('mafogh_just_updated_to');
+          if (justUpdatedTo && data.latest?.hash && justUpdatedTo === data.latest.hash) {
+            setUpdateInfo({ ...data, hasUpdate: false, latest: null });
+            return;
+          }
+
           setIsModalOpen(true);
 
           if (data.isForce) {
